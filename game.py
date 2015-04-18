@@ -3,10 +3,19 @@ __author__ = 'charles.andrew.parker@gmail.com'
 
 import objects
 import logging
-from coordinate import Coordinate
+import numpy as np
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
+
+
+def get_velocity_for_circular_orbit(parent, orbiter):
+    radius = np.array(orbiter["pos"]) - np.array(parent["pos"])
+    dist = np.linalg.norm(radius)
+
+    vel_norm = np.cross(radius / dist, np.array([0, 0, 1]))
+    speed = np.math.sqrt(0.10 * parent["mass"] / dist)
+    orbiter["vel"] = speed * vel_norm[:2]
 
 
 class GravitySim(object):

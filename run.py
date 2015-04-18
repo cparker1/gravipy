@@ -72,6 +72,11 @@ p4 = {"name": "Namek",
       "color": (100, 130, 180)}
 
 pygame.init()
+game.get_velocity_for_circular_orbit(sun, p1)
+game.get_velocity_for_circular_orbit(sun, p2)
+game.get_velocity_for_circular_orbit(sun, p3)
+game.get_velocity_for_circular_orbit(sun, p4)
+
 planets = [sun, p1, p2, p3, p4]
 sim = game.GravitySim(planets, config)
 screen = pygame.display.set_mode(config["dimensions"])
