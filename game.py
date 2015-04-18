@@ -1,7 +1,7 @@
 __author__ = 'charles.andrew.parker@gmail.com'
 
 
-import objects
+from objects import body
 import logging
 import numpy as np
 
@@ -14,8 +14,9 @@ def get_velocity_for_circular_orbit(parent, orbiter):
     dist = np.linalg.norm(radius)
 
     vel_norm = np.cross(radius / dist, np.array([0, 0, 1]))
-    speed = np.math.sqrt(0.10 * parent["mass"] / dist)
+    speed = 1.3 * np.math.sqrt(body.Planet.BIG_G * parent["mass"] / dist)
     orbiter["vel"] = speed * vel_norm[:2]
+    log.info("Setting {} circular orbit velocity to {}".format(orbiter["name"], orbiter["vel"]))
 
 
 class GravitySim(object):
@@ -24,6 +25,7 @@ class GravitySim(object):
 
     def __init__(self, planet_configs, config):
         self.planet_configs = planet_configs
+        self.planets = set()
         self.total_energy = 0
         self.create_simulation(self.planet_configs)
         GravitySim.big_g = config["gravitational_constant"]
@@ -31,39 +33,27 @@ class GravitySim(object):
 
     def create_simulation(self, planet_configs):
         log.info("Creating simulation.")
+        self.planets = set()
         for p in planet_configs:
-            objects.body.Planet(**p)
-        initial_kinetic = objects.body.Planet.get_total_kinetic_energy()
-        initial_potential = objects.body.Planet.calculate_initial_potential()
-        self.total_energy = initial_kinetic + initial_potential
-        log.info("Initial KE: {}, initial PE: {}, initial Total: {}".format(initial_kinetic,
-                                                                            initial_potential,
-                                                                            self.total_energy))
+            self.planets.add(body.Planet(**p))
 
     def reset(self):
-        objects.body.Planet.kill_planets()
         self.create_simulation(self.planet_configs)
 
     def update_planets(self, dt):
         log.info("UPDATING POSITIONS")
-        objects.body.Planet.update_positions(dt)
+        body.Planet.update_positions(dt, self.planets)
         log.info("UPDATING VELOCITY AND POTENTIAL ENERGY")
-        objects.body.Planet.update_velocity_and_potential(dt)
-        log.info("SCALING KINETIC ENERGY")
-        objects.body.Planet.scale_kinetic_energy_to_total_energy(self.total_energy)
-        log.info("DELETING DEAD PLANETS")
-        new_energy = objects.body.Planet.delete_dead_planets()
-        if new_energy is not None:
-            self.total_energy = new_energy
+        body.Planet.update_velocity_and_potential(dt, self.planets)
 
     def draw_planets(self, surface):
         log.info("Drawing planets")
-        for p in objects.body.Planet.planets:
+        for p in self.planets:
             log.debug("P {}".format(p.coord.pos))
             p.draw(surface)
 
         if GravitySim.draw_soi is True:
-            for p in objects.body.Planet.planets:
+            for p in self.planets:
                 p.draw_sphere_of_influence(surface)
 
 

@@ -27,15 +27,14 @@ log.setLevel(logging.WARNING)
 log.addHandler(ch)
 
 game.log.addHandler(ch)
-game.objects.body.log.addHandler(ch)
-game.objects.coordinate.log.addHandler(ch)
-
 game.log.addHandler(fh)
-game.objects.body.log.addHandler(fh)
-game.objects.coordinate.log.addHandler(fh)
+
+game.body.log.addHandler(ch)
+game.body.log.addHandler(fh)
+
 
 config = {
-    "dimensions": (1680, 720),
+    "dimensions": (1680, 900),
     "gravitational_constant": 0.1,
     "draw_sphere_of_influence": True
 }
@@ -45,35 +44,35 @@ black = 0, 0, 0
 VALUE = 0.02
 
 sun = {"name": "SUN",
-       "mass": 100.0,
-       "pos": (300, 300),
+       "mass": 10000000.0,
+       "pos": (1680/2, 900/2),
        "vel": (0.0, 0.0),
        "radius": 20,
-       "color": (120, 130, 140)}
+       "color": (255, 255, 240)}
 
 p1 = {"name": "Ee-Arth",
-      "mass": 10.0,
-      "pos": (300, 100),
+      "mass": 1000.0,
+      "pos": (1580, 450),
       "vel": (VALUE, -VALUE),
-      "color": (120, 130, 140)}
+      "color": (39, 227, 224)}
 
 p2 = {"name": "Frieza Planet 419",
-      "mass": 10.0,
-      "pos": (300, 500),
+      "mass": 1000.0,
+      "pos": (100, 450),
       "vel": (VALUE, VALUE),
       "color": (100, 130, 180)}
 
 p3 = {"name": "Vegeta",
-      "mass": 10.0,
+      "mass": 2000.0,
       "pos": (200, 200),
       "vel": (-VALUE, VALUE),
       "color": (100, 130, 180)}
 
 p4 = {"name": "Namek",
-      "mass": 10.0,
-      "pos": (400, 200),
+      "mass": 5000.0,
+      "pos": (1500, 700),
       "vel": (-VALUE, -VALUE),
-      "color": (100, 130, 180)}
+      "color": (0, 255, 128)}
 
 pygame.init()
 game.get_velocity_for_circular_orbit(sun, p1)
@@ -81,7 +80,7 @@ game.get_velocity_for_circular_orbit(sun, p2)
 game.get_velocity_for_circular_orbit(sun, p3)
 game.get_velocity_for_circular_orbit(sun, p4)
 
-planets = [sun, p1, p3, p4]
+planets = [sun, p1, p2, p3, p4]
 sim = game.GravitySim(planets, config)
 screen = pygame.display.set_mode(config["dimensions"])
 clock = pygame.time.Clock()
@@ -93,12 +92,12 @@ surface = pygame.Surface(config["dimensions"])
 
 while 1:
     for event in pygame.event.get():
-        log.debug("handling pygame event {}".format(event.type))
+        log.debug("Handling pygame event {}".format(event.type))
         if event.type == pygame.QUIT:
             sys.exit()
 
         if event.type == pygame.KEYDOWN:
-            log.debug("Handliing KEYDOWN {}".format(event.key))
+            log.debug("Handling KEYDOWN {}".format(event.key))
             if event.key == pygame.K_SPACE:
                 log.info("Restarting simulation")
                 sim.reset()
