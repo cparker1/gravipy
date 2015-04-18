@@ -23,16 +23,26 @@ class GravitySim(object):
     draw_soi = False
 
     def __init__(self, planet_configs, config):
-        for p in planet_configs:
-            objects.body.Planet(**p)
+        self.planet_configs = planet_configs
+        self.total_energy = 0
+        self.create_simulation(self.planet_configs)
         GravitySim.big_g = config["gravitational_constant"]
         GravitySim.draw_soi = config["draw_sphere_of_influence"]
-        self.initial_potential = objects.body.Planet.calculate_initial_potential()
-        self.initial_kinetic = objects.body.Planet.get_total_kinetic_energy()
-        self.total_energy = self.initial_kinetic + self.initial_potential
-        log.info("Initial KE: {}, initial PE: {}, initial Total: {}".format(self.initial_kinetic,
-                                                                            self.initial_potential,
+
+    def create_simulation(self, planet_configs):
+        log.info("Creating simulation.")
+        for p in planet_configs:
+            objects.body.Planet(**p)
+        initial_kinetic = objects.body.Planet.get_total_kinetic_energy()
+        initial_potential = objects.body.Planet.calculate_initial_potential()
+        self.total_energy = initial_kinetic + initial_potential
+        log.info("Initial KE: {}, initial PE: {}, initial Total: {}".format(initial_kinetic,
+                                                                            initial_potential,
                                                                             self.total_energy))
+
+    def reset(self):
+        objects.body.Planet.kill_planets()
+        self.create_simulation(self.planet_configs)
 
     def update_planets(self, dt):
         log.info("UPDATING POSITIONS")
@@ -55,4 +65,7 @@ class GravitySim(object):
         if GravitySim.draw_soi is True:
             for p in objects.body.Planet.planets:
                 p.draw_sphere_of_influence(surface)
+
+
+
 

@@ -18,8 +18,19 @@ class Planet(object):
 
     # [N*m/kg**2]
     BIG_G = 0.05
+    # TODO 18-Apr-15
+    # TODO Planets and dead planets should be
+    # TODO tracked by the simulator.  Most of
+    # TODO the existing classmethods should
+    # TODO use a passed in list of planets rather
+    # TODO than the class attribute planets/dead_planets
     planets = set()
     dead_planets = set()
+
+    @classmethod
+    def kill_planets(cls):
+        cls.planets = set()
+        cls.dead_planets = set()
 
     @classmethod
     def calculate_initial_potential(cls):
@@ -143,7 +154,7 @@ class Planet(object):
 
     def get_radius(self, update=False):
         if update is True:
-            self.radius = 20.0 * self.mass ** (1.0/3.0)
+            self.radius = 10.0 * self.mass ** (1.0/3.0)
         return self.radius
 
     def check_if_planet_in_influence(self, dist, planet):
