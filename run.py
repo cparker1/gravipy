@@ -7,9 +7,13 @@ import logging
 import time
 import os
 
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+if not os.path.isdir('./log'):
+    os.mkdir("./log")
 log_dir = "./log/{}".format(time.asctime().replace(' ', '').replace(':', ''))
-os.mkdir(log_dir)
+if not os.path.isdir(log_dir):
+    os.mkdir(log_dir)
+
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 fh = logging.FileHandler("{}/run.log".format(log_dir))
 fh.setLevel(logging.DEBUG)
 fh.setFormatter(formatter)
@@ -28,7 +32,8 @@ game.objects.coordinate.log.addHandler(fh)
 
 config = {
     "dimensions": (640, 800),
-    "gravitational_constant": 0.1
+    "gravitational_constant": 0.1,
+    "draw_sphere_of_influence": True
 }
 
 black = 0, 0, 0
@@ -46,35 +51,33 @@ p1 = {"name": "Ee-Arth",
       "mass": 10.0,
       "pos": (400, 600),
       "vel": (VALUE, -VALUE),
-      "radius": 10,
       "color": (120, 130, 140)}
 
 p2 = {"name": "Frieza Planet 419",
       "mass": 10.0,
       "pos": (100, 400),
       "vel": (VALUE, VALUE),
-      "radius": 10,
       "color": (100, 130, 180)}
 
 p3 = {"name": "Vegeta",
       "mass": 10.0,
       "pos": (200, 200),
       "vel": (-VALUE, VALUE),
-      "radius": 10,
       "color": (100, 130, 180)}
 
 p4 = {"name": "Namek",
       "mass": 10.0,
       "pos": (400, 200),
       "vel": (-VALUE, -VALUE),
-      "radius": 10,
       "color": (100, 130, 180)}
 
 pygame.init()
-planets = [p1, p2]
+planets = [sun, p1, p2, p3, p4]
 sim = game.GravitySim(planets, config)
 screen = pygame.display.set_mode(config["dimensions"])
 clock = pygame.time.Clock()
+clock.tick()
+print clock.get_time()
 
 surface = pygame.Surface(config["dimensions"])
 
@@ -88,4 +91,4 @@ while 1:
     sim.update_planets(clock.get_time())
     sim.draw_planets(screen)
     pygame.display.flip()
-    clock.tick(120)
+    clock.tick(240)

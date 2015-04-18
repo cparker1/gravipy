@@ -39,7 +39,7 @@ class Coordinate(object):
         self.acc = Coordinate.get_empty_coord()
 
     def update_pos(self, dt):
-        log.debug("Initial pos {}".format(self.pos))
+        log.debug("Initial pos {}; vel {}".format(self.pos, self.vel))
         self.pos = self.pos + dt*self.vel
         log.debug("Final pos {}".format(self.pos))
 
