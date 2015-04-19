@@ -6,6 +6,7 @@ import sys
 import logging
 import time
 import os
+import numpy as np
 
 if not os.path.isdir('./log'):
     os.mkdir("./log")
@@ -89,6 +90,9 @@ print clock.get_time()
 
 surface = pygame.Surface(config["dimensions"])
 
+calculate_offset = False
+offset = np.array([0, 0])
+start_mouse_down_offset = np.array([0, 0])
 
 while 1:
     for event in pygame.event.get():
@@ -102,9 +106,21 @@ while 1:
                 log.info("Restarting simulation")
                 sim.reset()
 
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            calculate_offset = True
+            start_mouse_down_offset = np.array(pygame.mouse.get_pos())
+
+        if event.type == pygame.MOUSEBUTTONUP:
+            calculate_offset = False
+            offset = np.array(pygame.mouse.get_pos()) - start_mouse_down_offset
+
+    if calculate_offset is True:
+        offset = np.array(pygame.mouse.get_pos()) - start_mouse_down_offset
+
     screen.fill(black)
     sim.update_planets(clock.get_time())
-    sim.draw_planets(screen)
+    sim.draw_planets(screen, offset)
     pygame.display.flip()
-    clock.tick(240)
+    clock.tick(120)
+    print pygame.mouse.get_pos()
 

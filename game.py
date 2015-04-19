@@ -46,15 +46,15 @@ class GravitySim(object):
         log.info("UPDATING VELOCITY AND POTENTIAL ENERGY")
         body.Planet.update_velocity_and_potential(dt, self.planets)
 
-    def draw_planets(self, surface):
+    def draw_planets(self, surface, offset):
         log.info("Drawing planets")
         for p in self.planets:
             log.debug("P {}".format(p.coord.pos))
-            p.draw(surface)
+            p.draw(surface, offset)
 
         if GravitySim.draw_soi is True:
             for p in self.planets:
-                p.draw_sphere_of_influence(surface)
+                p.draw_sphere_of_influence(surface, offset)
 
 
 

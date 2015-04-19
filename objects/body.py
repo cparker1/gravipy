@@ -137,7 +137,7 @@ class Planet(object):
 
     def get_sphere_of_influence(self, update=False):
         if update is True:
-            self.sphere_of_influence = (np.math.e ** (1.0/2.0)) * np.math.sqrt(Planet.BIG_G * self.mass)
+            self.sphere_of_influence = (np.math.e ** 5) * np.math.sqrt(Planet.BIG_G * self.mass)
         return self.sphere_of_influence
 
     def get_radius(self, update=False):
@@ -165,21 +165,21 @@ class Planet(object):
         self.coord.vel *= ratio
         log.info("{}: New vel is {}".format(self.name, self.coord.vel))
 
-    def draw(self, surface):
+    def draw(self, surface, offset):
         log.debug("Drawing circle: coord={}; radius={}; border={}".format(self.coord.pos,
                                                                           np.round(self.get_radius()).astype(int),
                                                                           self.border))
         if 0 != np.round(self.get_radius()).astype(int):
             pygame.draw.circle(surface,
                                self.color,
-                               np.round(self.coord.pos).astype(int),
+                               np.round(self.coord.pos).astype(int) + offset,
                                np.round(self.get_radius()).astype(int),
                                self.border)
 
-    def draw_sphere_of_influence(self, surface):
+    def draw_sphere_of_influence(self, surface, offset):
         if 0.0 != np.round(self.get_sphere_of_influence()).astype(int):
             pygame.draw.circle(surface,
                                self.color,
-                               np.round(self.coord.pos).astype(int),
+                               np.round(self.coord.pos).astype(int) + offset,
                                np.round(self.get_sphere_of_influence()).astype(int),
                                1)
