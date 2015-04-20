@@ -65,7 +65,7 @@ p2 = {"name": "Frieza Planet 419",
 
 p3 = {"name": "Vegeta",
       "mass": 2000.0,
-      "pos": (200, 200),
+      "pos": (-2000, 200),
       "vel": (-VALUE, VALUE),
       "color": (100, 130, 180)}
 
@@ -91,7 +91,8 @@ print clock.get_time()
 surface = pygame.Surface(config["dimensions"])
 
 calculate_offset = False
-offset = np.array([0, 0])
+permanent_offset = np.array([0, 0])
+temp_offset = np.array([0,0])
 start_mouse_down_offset = np.array([0, 0])
 
 while 1:
@@ -112,14 +113,15 @@ while 1:
 
         if event.type == pygame.MOUSEBUTTONUP:
             calculate_offset = False
-            offset = np.array(pygame.mouse.get_pos()) - start_mouse_down_offset
+            permanent_offset += temp_offset
+            temp_offset = np.array([0,0])
 
     if calculate_offset is True:
-        offset = np.array(pygame.mouse.get_pos()) - start_mouse_down_offset
+        temp_offset = np.array(pygame.mouse.get_pos()) - start_mouse_down_offset
 
     screen.fill(black)
     sim.update_planets(clock.get_time())
-    sim.draw_planets(screen, offset)
+    sim.draw_planets(screen, permanent_offset + temp_offset)
     pygame.display.flip()
     clock.tick(120)
     print pygame.mouse.get_pos()

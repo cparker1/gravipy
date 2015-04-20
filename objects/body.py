@@ -142,7 +142,7 @@ class Planet(object):
 
     def get_radius(self, update=False):
         if update is True:
-            self.radius = 1.0 * self.mass ** (1.0/3.0)
+            self.radius = 0.5 * self.mass ** (1.0/3.0)
         return self.radius
 
     def check_if_planet_in_influence(self, dist, planet):
