@@ -6,19 +6,57 @@ import logging
 import numpy as np
 import itertools
 from coordinate import Coordinate
+import random
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 
-def get_velocity_for_circular_orbit(parent, orbiter):
-    radius = np.array(orbiter["pos"]) - np.array(parent["pos"])
+def generate_planet(base_star, radius, name):
+    offset = base_star["pos"]
+    angle = random.randrange(0, 360)
+    angle = np.math.pi * angle / 180.0
+    pos = np.array(offset) + radius * np.array([np.math.cos(angle), np.math.sin(angle)])
+    vel = base_star["vel"] + get_velocity_for_circular_orbit(base_star, pos)
+    mass = random.randrange(10000, 300000)
+
+    def rand_clr():
+        return random.randrange(0, 255)
+
+    color = (rand_clr(), rand_clr(), rand_clr())
+
+    return {"name": name,
+            "pos": pos,
+            "mass": mass,
+            "color": color,
+            "vel": vel}
+
+
+def generate_star_system_config(base_name, offset, num_planets):
+    star = {}
+    star["name"] = base_name
+    star["mass"] = random.randrange(1000000, 8000000)
+    star["pos"] = offset
+    star["color"] = (255, 255, 190)
+    star["vel"] = (0, 0)
+
+    planet_list = [star]
+    for r in range(num_planets):
+        new_planet = generate_planet(star,
+                                     1000 * (r + 1),
+                                     "{}-{}".format(star["name"], r+1))
+        planet_list.append(new_planet)
+
+    return planet_list
+
+
+def get_velocity_for_circular_orbit(parent, pos):
+    radius = np.array(pos) - np.array(parent["pos"])
     dist = np.linalg.norm(radius)
 
     vel_norm = np.cross(radius / dist, np.array([0, 0, 1]))
     speed = 1.3 * np.math.sqrt(0.005 * parent["mass"] / dist)
-    orbiter["vel"] = speed * vel_norm[:2]
-    log.info("Setting {} circular orbit velocity to {}".format(orbiter["name"], orbiter["vel"]))
+    return speed * vel_norm[:2]
 
 
 class GravitySim(object):

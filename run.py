@@ -42,60 +42,21 @@ config = {
 
 black = 0, 0, 0
 
-VALUE = 0.02
-
-sun = {"name": "SUN",
-       "mass": 10000000.0,
-       "pos": (0, 0),
-       "vel": (0.0, 0.0),
-       "color": (255, 255, 240)}
-
-p1 = {"name": "Ee-Arth",
-      "mass": 50000.0,
-      "pos": (1580, 1600),
-      "vel": (VALUE, -VALUE),
-      "color": (39, 227, 224)}
-
-p2 = {"name": "Frieza Planet 419",
-      "mass": 40000.0,
-      "pos": (-2000, 0),
-      "vel": (VALUE, VALUE),
-      "color": (100, 130, 180)}
-
-
-sun2 = {"name": "SUN2",
-       "mass": 10000000.0,
-       "pos": (8000, 8000),
-       "vel": (0.0, 0.0),
-       "color": (255, 255, 240)}
-
-p3 = {"name": "Ee-Arth2",
-      "mass": 50000.0,
-      "pos": (10000, 7750),
-      "vel": (VALUE, -VALUE),
-      "color": (39, 227, 224)}
-
-p4 = {"name": "Frieza Planet 419_2",
-      "mass": 40000.0,
-      "pos": (6000, 8000),
-      "vel": (VALUE, VALUE),
-      "color": (100, 130, 180)}
 
 pygame.init()
-game.get_velocity_for_circular_orbit(sun, p1)
-game.get_velocity_for_circular_orbit(sun, p2)
 
-game.get_velocity_for_circular_orbit(sun, sun2)
-game.get_velocity_for_circular_orbit(sun2, p3)
-game.get_velocity_for_circular_orbit(sun2, p4)
+# planets1 = game.generate_star_system_config("Sol", (1000, 1000), 1)
+# planets2 = game.generate_star_system_config("Sol", (-8000, 1000), 2)
+# planets3 = game.generate_star_system_config("Sol", (8000, 10000), 1)
+# planets = planets1 + planets2 + planets3
 
+planets = game.generate_star_system_config("Sol", (0, 0), 8)
 
-planets = [sun, p1, p2] + [sun2, p3, p4]
 sim = game.GravitySim(planets, config)
 screen = pygame.display.set_mode(config["dimensions"])
 clock = pygame.time.Clock()
 clock.tick()
-print clock.get_time()
+clock.get_time()
 
 surface = pygame.Surface(config["dimensions"])
 
@@ -152,4 +113,3 @@ while 1:
     sim.draw_planets(screen, permanent_offset + temp_offset, scale)
     pygame.display.flip()
     clock.tick(120)
-    print scale
