@@ -66,8 +66,8 @@ class Planet(object):
             self.radius = 2.0 * self.mass ** (1.0/3.0)
         return self.radius
 
-    def check_if_visible(self, scale):
-        if scale * self.get_radius() < 4:
+    def check_if_visible(self, scale, value):
+        if scale * value < 1:
             return False
         else:
             return True
@@ -79,7 +79,7 @@ class Planet(object):
         self.get_sphere_of_influence(update=True)
 
     def draw(self, surface, offset, scale):
-        if self.check_if_visible(scale) is False:
+        if self.check_if_visible(scale, self.get_radius()) is False:
             log.debug("Planet {} is too small to draw at this scale.".format(self.name))
             return False
         else:
@@ -94,7 +94,7 @@ class Planet(object):
             return True
 
     def draw_sphere_of_influence(self, surface, offset, scale):
-        if self.check_if_visible(scale) is True:
+        if self.check_if_visible(scale, self.get_sphere_of_influence()) is True:
             pygame.draw.circle(surface,
                                self.color,
                                np.round(scale * self.coord.pos).astype(int) + offset,

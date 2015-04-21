@@ -48,40 +48,49 @@ sun = {"name": "SUN",
        "mass": 10000000.0,
        "pos": (0, 0),
        "vel": (0.0, 0.0),
-       "radius": 20,
        "color": (255, 255, 240)}
 
 p1 = {"name": "Ee-Arth",
-      "mass": 10000.0,
-      "pos": (1580, 450),
+      "mass": 50000.0,
+      "pos": (1580, 1600),
       "vel": (VALUE, -VALUE),
       "color": (39, 227, 224)}
 
 p2 = {"name": "Frieza Planet 419",
-      "mass": 10000.0,
-      "pos": (100, 450),
+      "mass": 40000.0,
+      "pos": (-2000, 0),
       "vel": (VALUE, VALUE),
       "color": (100, 130, 180)}
 
-p3 = {"name": "Vegeta",
-      "mass": 20000.0,
-      "pos": (-2000, 200),
-      "vel": (-VALUE, VALUE),
-      "color": (100, 130, 180)}
 
-p4 = {"name": "Namek",
+sun2 = {"name": "SUN2",
+       "mass": 10000000.0,
+       "pos": (8000, 8000),
+       "vel": (0.0, 0.0),
+       "color": (255, 255, 240)}
+
+p3 = {"name": "Ee-Arth2",
       "mass": 50000.0,
-      "pos": (1500, 700),
-      "vel": (-VALUE, -VALUE),
-      "color": (0, 255, 128)}
+      "pos": (10000, 7750),
+      "vel": (VALUE, -VALUE),
+      "color": (39, 227, 224)}
+
+p4 = {"name": "Frieza Planet 419_2",
+      "mass": 40000.0,
+      "pos": (6000, 8000),
+      "vel": (VALUE, VALUE),
+      "color": (100, 130, 180)}
 
 pygame.init()
 game.get_velocity_for_circular_orbit(sun, p1)
 game.get_velocity_for_circular_orbit(sun, p2)
-game.get_velocity_for_circular_orbit(sun, p3)
-game.get_velocity_for_circular_orbit(sun, p4)
 
-planets = [sun, p1, p2, p3, p4]
+game.get_velocity_for_circular_orbit(sun, sun2)
+game.get_velocity_for_circular_orbit(sun2, p3)
+game.get_velocity_for_circular_orbit(sun2, p4)
+
+
+planets = [sun, p1, p2] + [sun2, p3, p4]
 sim = game.GravitySim(planets, config)
 screen = pygame.display.set_mode(config["dimensions"])
 clock = pygame.time.Clock()
@@ -94,6 +103,7 @@ calculate_offset = False
 permanent_offset = np.array([1680/2, 720/2])
 temp_offset = np.array([0,0])
 scale = 0.1
+timestep = 1
 start_mouse_down_offset = np.array([0, 0])
 
 while 1:
@@ -108,6 +118,16 @@ while 1:
                 log.info("Restarting simulation")
                 sim.reset()
 
+        if event.type == pygame.MOUSEBUTTONUP or event.type == pygame.MOUSEBUTTONDOWN:
+            # scrolling up
+            if event.button == 4:
+                scale += 0.001
+                timestep -= 0.1
+            # scrolling down
+            elif event.button == 5:
+                scale -= 0.001
+                timestep += 0.1
+
         if event.type == pygame.MOUSEBUTTONDOWN:
             calculate_offset = True
             start_mouse_down_offset = np.array(pygame.mouse.get_pos())
@@ -117,13 +137,19 @@ while 1:
             permanent_offset += temp_offset
             temp_offset = np.array([0,0])
 
+        if event.type == pygame.K_KP_PLUS:
+            scale += 0.05
+
+        if event.type == pygame.K_KP_MINUS:
+            scale -= 0.05
+
     if calculate_offset is True:
         temp_offset = np.array(pygame.mouse.get_pos()) - start_mouse_down_offset
 
     screen.fill(black)
     surface.fill(black)
-    sim.update_planets(1)
+    sim.update_planets(timestep)
     sim.draw_planets(screen, permanent_offset + temp_offset, scale)
     pygame.display.flip()
     clock.tick(120)
-
+    print scale
