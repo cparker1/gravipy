@@ -63,7 +63,7 @@ class Planet(object):
 
     def get_radius(self, update=False):
         if update is True:
-            self.radius = 0.5 * self.mass ** (1.0/3.0)
+            self.radius = 2.0 * self.mass ** (1.0/3.0)
         return self.radius
 
     def check_if_visible(self, scale):
@@ -88,7 +88,7 @@ class Planet(object):
                                                                           self.border))
             pygame.draw.circle(surface,
                                self.color,
-                               np.round(self.coord.pos).astype(int) + offset,
+                               np.round(scale * self.coord.pos).astype(int) + offset,
                                np.round(scale * self.get_radius()).astype(int),
                                self.border)
             return True
@@ -97,6 +97,6 @@ class Planet(object):
         if self.check_if_visible(scale) is True:
             pygame.draw.circle(surface,
                                self.color,
-                               np.round(self.coord.pos).astype(int) + offset,
+                               np.round(scale * self.coord.pos).astype(int) + offset,
                                np.round(scale * self.get_sphere_of_influence()).astype(int),
                                1)

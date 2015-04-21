@@ -93,7 +93,7 @@ surface = pygame.Surface(config["dimensions"])
 calculate_offset = False
 permanent_offset = np.array([1680/2, 720/2])
 temp_offset = np.array([0,0])
-scale = 0.5
+scale = 0.1
 start_mouse_down_offset = np.array([0, 0])
 
 while 1:
@@ -126,5 +126,4 @@ while 1:
     sim.draw_planets(screen, permanent_offset + temp_offset, scale)
     pygame.display.flip()
     clock.tick(120)
-    print pygame.mouse.get_pos()
 
