@@ -120,7 +120,7 @@ while 1:
         temp_offset = np.array(pygame.mouse.get_pos()) - start_mouse_down_offset
 
     screen.fill(black)
-    sim.update_planets(clock.get_time())
+    sim.update_planets(1)
     sim.draw_planets(screen, permanent_offset + temp_offset)
     pygame.display.flip()
     clock.tick(120)
