@@ -66,27 +66,37 @@ class Planet(object):
             self.radius = 0.5 * self.mass ** (1.0/3.0)
         return self.radius
 
+    def check_if_visible(self, scale):
+        if scale * self.get_radius() < 4:
+            return False
+        else:
+            return True
+
     def collide(self, planet):
         self.coord.vel = (self.get_momentum() + planet.get_momentum())/(self.mass + planet.mass)
         self.mass += planet.mass
         self.get_radius(update=True)
         self.get_sphere_of_influence(update=True)
 
-    def draw(self, surface, offset):
-        log.debug("Drawing circle: coord={}; radius={}; border={}".format(self.coord.pos,
+    def draw(self, surface, offset, scale):
+        if self.check_if_visible(scale) is False:
+            log.debug("Planet {} is too small to draw at this scale.".format(self.name))
+            return False
+        else:
+            log.debug("Drawing circle: coord={}; radius={}; border={}".format(self.coord.pos,
                                                                           np.round(self.get_radius()).astype(int),
                                                                           self.border))
-        if 0 != np.round(self.get_radius()).astype(int):
             pygame.draw.circle(surface,
                                self.color,
                                np.round(self.coord.pos).astype(int) + offset,
-                               np.round(self.get_radius()).astype(int),
+                               np.round(scale * self.get_radius()).astype(int),
                                self.border)
+            return True
 
-    def draw_sphere_of_influence(self, surface, offset):
-        if 0.0 != np.round(self.get_sphere_of_influence()).astype(int):
+    def draw_sphere_of_influence(self, surface, offset, scale):
+        if self.check_if_visible(scale) is True:
             pygame.draw.circle(surface,
                                self.color,
                                np.round(self.coord.pos).astype(int) + offset,
-                               np.round(self.get_sphere_of_influence()).astype(int),
+                               np.round(scale * self.get_sphere_of_influence()).astype(int),
                                1)

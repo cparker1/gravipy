@@ -46,31 +46,31 @@ VALUE = 0.02
 
 sun = {"name": "SUN",
        "mass": 10000000.0,
-       "pos": (1680/2, 900/2),
+       "pos": (0, 0),
        "vel": (0.0, 0.0),
        "radius": 20,
        "color": (255, 255, 240)}
 
 p1 = {"name": "Ee-Arth",
-      "mass": 1000.0,
+      "mass": 10000.0,
       "pos": (1580, 450),
       "vel": (VALUE, -VALUE),
       "color": (39, 227, 224)}
 
 p2 = {"name": "Frieza Planet 419",
-      "mass": 1000.0,
+      "mass": 10000.0,
       "pos": (100, 450),
       "vel": (VALUE, VALUE),
       "color": (100, 130, 180)}
 
 p3 = {"name": "Vegeta",
-      "mass": 2000.0,
+      "mass": 20000.0,
       "pos": (-2000, 200),
       "vel": (-VALUE, VALUE),
       "color": (100, 130, 180)}
 
 p4 = {"name": "Namek",
-      "mass": 5000.0,
+      "mass": 50000.0,
       "pos": (1500, 700),
       "vel": (-VALUE, -VALUE),
       "color": (0, 255, 128)}
@@ -91,8 +91,9 @@ print clock.get_time()
 surface = pygame.Surface(config["dimensions"])
 
 calculate_offset = False
-permanent_offset = np.array([0, 0])
+permanent_offset = np.array([1680/2, 720/2])
 temp_offset = np.array([0,0])
+scale = 0.5
 start_mouse_down_offset = np.array([0, 0])
 
 while 1:
@@ -120,8 +121,9 @@ while 1:
         temp_offset = np.array(pygame.mouse.get_pos()) - start_mouse_down_offset
 
     screen.fill(black)
+    surface.fill(black)
     sim.update_planets(1)
-    sim.draw_planets(screen, permanent_offset + temp_offset)
+    sim.draw_planets(screen, permanent_offset + temp_offset, scale)
     pygame.display.flip()
     clock.tick(120)
     print pygame.mouse.get_pos()
