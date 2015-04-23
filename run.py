@@ -7,6 +7,7 @@ import logging
 import time
 import os
 import numpy as np
+import camera
 
 if not os.path.isdir('./log'):
     os.mkdir("./log")
@@ -33,67 +34,35 @@ game.log.addHandler(fh)
 game.body.log.addHandler(ch)
 game.body.log.addHandler(fh)
 
+camera.log.addHandler(ch)
+camera.log.addHandler(fh)
 
 config = {
     "dimensions": (1680, 900),
     "gravitational_constant": 0.1,
-    "draw_sphere_of_influence": True
-}
+    "draw_sphere_of_influence": False,
+    "num_bg_stars": 0}
 
 black = 0, 0, 0
 
-VALUE = 0.02
-
-sun = {"name": "SUN",
-       "mass": 10000000.0,
-       "pos": (1680/2, 900/2),
-       "vel": (0.0, 0.0),
-       "radius": 20,
-       "color": (255, 255, 240)}
-
-p1 = {"name": "Ee-Arth",
-      "mass": 1000.0,
-      "pos": (1580, 450),
-      "vel": (VALUE, -VALUE),
-      "color": (39, 227, 224)}
-
-p2 = {"name": "Frieza Planet 419",
-      "mass": 1000.0,
-      "pos": (100, 450),
-      "vel": (VALUE, VALUE),
-      "color": (100, 130, 180)}
-
-p3 = {"name": "Vegeta",
-      "mass": 2000.0,
-      "pos": (-2000, 200),
-      "vel": (-VALUE, VALUE),
-      "color": (100, 130, 180)}
-
-p4 = {"name": "Namek",
-      "mass": 5000.0,
-      "pos": (1500, 700),
-      "vel": (-VALUE, -VALUE),
-      "color": (0, 255, 128)}
 
 pygame.init()
-game.get_velocity_for_circular_orbit(sun, p1)
-game.get_velocity_for_circular_orbit(sun, p2)
-game.get_velocity_for_circular_orbit(sun, p3)
-game.get_velocity_for_circular_orbit(sun, p4)
 
-planets = [sun, p1, p2, p3, p4]
+# planets1 = game.generate_star_system_config("Sol", (1000, 1000, 0), 1)
+# planets2 = game.generate_star_system_config("Sol", (-8000, 1000, 0), 2)
+# planets3 = game.generate_star_system_config("Sol", (8000, 10000, 0), 1)
+# planets = planets1 + planets2 + planets3
+
+planets = game.generate_star_system_config("Sol", (10, 10, 0), 5)
+
 sim = game.GravitySim(planets, config)
 screen = pygame.display.set_mode(config["dimensions"])
 clock = pygame.time.Clock()
 clock.tick()
-print clock.get_time()
+clock.get_time()
 
-surface = pygame.Surface(config["dimensions"])
-
-calculate_offset = False
-permanent_offset = np.array([0, 0])
-temp_offset = np.array([0,0])
-start_mouse_down_offset = np.array([0, 0])
+cam = camera.Camera(np.array([2000, 0, 300]), config["dimensions"])
+timestep = 5
 
 while 1:
     for event in pygame.event.get():
@@ -106,23 +75,16 @@ while 1:
             if event.key == pygame.K_SPACE:
                 log.info("Restarting simulation")
                 sim.reset()
+                cam.reset()
+                
+        cam.handle_event(event)
 
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            calculate_offset = True
-            start_mouse_down_offset = np.array(pygame.mouse.get_pos())
-
-        if event.type == pygame.MOUSEBUTTONUP:
-            calculate_offset = False
-            permanent_offset += temp_offset
-            temp_offset = np.array([0,0])
-
-    if calculate_offset is True:
-        temp_offset = np.array(pygame.mouse.get_pos()) - start_mouse_down_offset
+    cam.update()
+    sim.update_planets(timestep)
 
     screen.fill(black)
-    sim.update_planets(clock.get_time())
-    sim.draw_planets(screen, permanent_offset + temp_offset)
+    sim.draw_background(screen, cam)
+    sim.draw_planets(screen, cam)
     pygame.display.flip()
-    clock.tick(120)
-    print pygame.mouse.get_pos()
 
+    clock.tick(30)

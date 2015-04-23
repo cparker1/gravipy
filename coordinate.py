@@ -2,6 +2,7 @@ __author__ = 'charles'
 
 import logging
 import numpy as np
+import random
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -9,7 +10,7 @@ log.setLevel(logging.DEBUG)
 
 class Coordinate(object):
 
-    DIMENSIONS = 2
+    DIMENSIONS = 3
 
     @classmethod
     def get_distance_and_radius_vector(cls, CoordA, CoordB):
@@ -23,6 +24,14 @@ class Coordinate(object):
         matches the dimensions expected
         """
         return np.array([0 for _ in range(cls.DIMENSIONS)])
+
+    @classmethod
+    def get_random_coordinate(cls, min, max):
+        def randvalue(min, max):
+            return random.sample([1, -1], 1)[0] * random.randrange(min, max)
+
+        return [randvalue(min, max) for _ in range(cls.DIMENSIONS)]
+
 
     @classmethod
     def validate_coordinate(cls, coord):
