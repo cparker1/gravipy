@@ -66,37 +66,58 @@ class Planet(object):
             self.radius = 2.0 * self.mass ** (1.0/3.0)
         return self.radius
 
-    def check_if_visible(self, scale, value):
-        if scale * value < 1:
-            return False
-        else:
-            return True
-
     def collide(self, planet):
         self.coord.vel = (self.get_momentum() + planet.get_momentum())/(self.mass + planet.mass)
         self.mass += planet.mass
         self.get_radius(update=True)
         self.get_sphere_of_influence(update=True)
 
-    def draw(self, surface, offset, scale):
-        if self.check_if_visible(scale, self.get_radius()) is False:
-            log.debug("Planet {} is too small to draw at this scale.".format(self.name))
+    def check_if_visible(self, apparent_radius):
+        if apparent_radius < 1:
             return False
         else:
+            return True
+
+    def draw(self, surface, camera):
+        r, pos = camera.get_apparent_radius_and_draw_pos(self.coord, self.get_radius())
+        if self.check_if_visible(r) is False:
+            log.debug("Planet {} is too small to draw at this scale.".format(self.name))
+            return False
+
+        elif pos is not None:
             log.debug("Drawing circle: coord={}; radius={}; border={}".format(self.coord.pos,
-                                                                          np.round(self.get_radius()).astype(int),
-                                                                          self.border))
+                                                                              self.get_radius(),
+                                                                              self.border))
             pygame.draw.circle(surface,
                                self.color,
-                               np.round(scale * self.coord.pos).astype(int) + offset,
-                               np.round(scale * self.get_radius()).astype(int),
+                               pos,
+                               np.round(r).astype(int),
                                self.border)
             return True
 
-    def draw_sphere_of_influence(self, surface, offset, scale):
-        if self.check_if_visible(scale, self.get_sphere_of_influence()) is True:
+    def draw_sphere_of_influence(self, surface, camera):
+        r, pos = camera.get_apparent_radius_and_draw_pos(self.coord, self.get_sphere_of_influence())
+        if self.check_if_visible(r) is True and pos is not None:
             pygame.draw.circle(surface,
                                self.color,
-                               np.round(scale * self.coord.pos).astype(int) + offset,
-                               np.round(scale * self.get_sphere_of_influence()).astype(int),
+                               pos,
+                               np.round(r).astype(int),
                                1)
+
+
+class BackgroundStar(object):
+
+    def __init__(self, **kwargs):
+        self.coord = Coordinate(kwargs["pos"], kwargs["vel"])
+        self.radius = kwargs["radius"]
+        self.color = (255, 255, 255)
+
+    def draw(self, surface, camera):
+        _, pos = camera.get_apparent_radius_and_draw_pos(self.coord, 0)
+        if pos is not None:
+            log.debug("Drawing background star: coord={}; radius={};".format(self.coord.pos, self.radius))
+            pygame.draw.circle(surface,
+                               self.color,
+                               pos,
+                               np.round(self.radius).astype(int),
+                               0)

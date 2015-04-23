@@ -7,6 +7,7 @@ import logging
 import time
 import os
 import numpy as np
+import camera
 
 if not os.path.isdir('./log'):
     os.mkdir("./log")
@@ -33,24 +34,26 @@ game.log.addHandler(fh)
 game.body.log.addHandler(ch)
 game.body.log.addHandler(fh)
 
+camera.log.addHandler(ch)
+camera.log.addHandler(fh)
 
 config = {
     "dimensions": (1680, 900),
     "gravitational_constant": 0.1,
-    "draw_sphere_of_influence": True
-}
+    "draw_sphere_of_influence": False,
+    "num_bg_stars": 0}
 
 black = 0, 0, 0
 
 
 pygame.init()
 
-# planets1 = game.generate_star_system_config("Sol", (1000, 1000), 1)
-# planets2 = game.generate_star_system_config("Sol", (-8000, 1000), 2)
-# planets3 = game.generate_star_system_config("Sol", (8000, 10000), 1)
+# planets1 = game.generate_star_system_config("Sol", (1000, 1000, 0), 1)
+# planets2 = game.generate_star_system_config("Sol", (-8000, 1000, 0), 2)
+# planets3 = game.generate_star_system_config("Sol", (8000, 10000, 0), 1)
 # planets = planets1 + planets2 + planets3
 
-planets = game.generate_star_system_config("Sol", (0, 0), 8)
+planets = game.generate_star_system_config("Sol", (10, 10, 0), 5)
 
 sim = game.GravitySim(planets, config)
 screen = pygame.display.set_mode(config["dimensions"])
@@ -58,14 +61,8 @@ clock = pygame.time.Clock()
 clock.tick()
 clock.get_time()
 
-surface = pygame.Surface(config["dimensions"])
-
-calculate_offset = False
-permanent_offset = np.array([1680/2, 720/2])
-temp_offset = np.array([0,0])
-scale = 0.1
-timestep = 1
-start_mouse_down_offset = np.array([0, 0])
+cam = camera.Camera(np.array([2000, 0, 300]), config["dimensions"])
+timestep = 5
 
 while 1:
     for event in pygame.event.get():
@@ -78,38 +75,16 @@ while 1:
             if event.key == pygame.K_SPACE:
                 log.info("Restarting simulation")
                 sim.reset()
+                cam.reset()
+                
+        cam.handle_event(event)
 
-        if event.type == pygame.MOUSEBUTTONUP or event.type == pygame.MOUSEBUTTONDOWN:
-            # scrolling up
-            if event.button == 4:
-                scale += 0.001
-                timestep -= 0.1
-            # scrolling down
-            elif event.button == 5:
-                scale -= 0.001
-                timestep += 0.1
-
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            calculate_offset = True
-            start_mouse_down_offset = np.array(pygame.mouse.get_pos())
-
-        if event.type == pygame.MOUSEBUTTONUP:
-            calculate_offset = False
-            permanent_offset += temp_offset
-            temp_offset = np.array([0,0])
-
-        if event.type == pygame.K_KP_PLUS:
-            scale += 0.05
-
-        if event.type == pygame.K_KP_MINUS:
-            scale -= 0.05
-
-    if calculate_offset is True:
-        temp_offset = np.array(pygame.mouse.get_pos()) - start_mouse_down_offset
+    cam.update()
+    sim.update_planets(timestep)
 
     screen.fill(black)
-    surface.fill(black)
-    sim.update_planets(timestep)
-    sim.draw_planets(screen, permanent_offset + temp_offset, scale)
+    sim.draw_background(screen, cam)
+    sim.draw_planets(screen, cam)
     pygame.display.flip()
-    clock.tick(120)
+
+    clock.tick(30)

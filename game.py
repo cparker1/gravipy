@@ -16,7 +16,7 @@ def generate_planet(base_star, radius, name):
     offset = base_star["pos"]
     angle = random.randrange(0, 360)
     angle = np.math.pi * angle / 180.0
-    pos = np.array(offset) + radius * np.array([np.math.cos(angle), np.math.sin(angle)])
+    pos = np.array(offset) + radius * np.array([np.math.cos(angle), np.math.sin(angle), 0])
     vel = base_star["vel"] + get_velocity_for_circular_orbit(base_star, pos)
     mass = random.randrange(10000, 300000)
 
@@ -33,12 +33,12 @@ def generate_planet(base_star, radius, name):
 
 
 def generate_star_system_config(base_name, offset, num_planets):
-    star = {}
-    star["name"] = base_name
-    star["mass"] = random.randrange(1000000, 8000000)
-    star["pos"] = offset
-    star["color"] = (255, 255, 190)
-    star["vel"] = (0, 0)
+    star = {
+        "name": base_name,
+        "mass": random.randrange(1000000, 8000000),
+        "pos": offset,
+        "color": (255, 255, 190),
+        "vel": (0, 0, 0)}
 
     planet_list = [star]
     for r in range(num_planets):
@@ -56,29 +56,43 @@ def get_velocity_for_circular_orbit(parent, pos):
 
     vel_norm = np.cross(radius / dist, np.array([0, 0, 1]))
     speed = 1.3 * np.math.sqrt(0.005 * parent["mass"] / dist)
-    return speed * vel_norm[:2]
+    return speed * vel_norm
 
+
+def generate_background_star_field(num_stars):
+    star_list = []
+    for _ in range(num_stars):
+        args = {"pos": Coordinate.get_random_coordinate(100000, 200000),
+                "vel": Coordinate.get_empty_coord(),
+                "radius": random.randrange(1, 3)}
+        star_list.append(args)
+    return star_list
 
 class GravitySim(object):
     BIG_G = 0.005
     draw_soi = False
 
-    def __init__(self, planet_configs, config):
+    def __init__(self, planet_configs, sim_config):
+        self.sim_config = sim_config
         self.planet_configs = planet_configs
         self.planets = set()
+        self.background_stars = set()
         self.total_energy = 0
-        self.create_simulation(self.planet_configs)
-        GravitySim.big_g = config["gravitational_constant"]
-        GravitySim.draw_soi = config["draw_sphere_of_influence"]
+        self.create_simulation(self.planet_configs, self.sim_config)
+        GravitySim.big_g = sim_config["gravitational_constant"]
+        GravitySim.draw_soi = sim_config["draw_sphere_of_influence"]
 
-    def create_simulation(self, planet_configs):
+    def create_simulation(self, planet_configs, sim_config):
         log.info("Creating simulation.")
         self.planets = set()
         for p in planet_configs:
             self.planets.add(body.Planet(**p))
 
+        for s in generate_background_star_field(sim_config["num_bg_stars"]):
+            self.background_stars.add(body.BackgroundStar(**s))
+
     def reset(self):
-        self.create_simulation(self.planet_configs)
+        self.create_simulation(self.planet_configs, self.sim_config)
 
     @classmethod
     def get_total_kinetic_energy(cls, planets):
@@ -153,13 +167,25 @@ class GravitySim(object):
         log.info("UPDATING VELOCITY AND POTENTIAL ENERGY")
         self.update_velocity_and_potential(dt, self.planets)
 
-    def draw_planets(self, surface, offset, scale):
-        log.info("Drawing planets")
-        for p in self.planets:
+    def draw_background(self, surface, camera):
+        log.info("Drawing Background")
+        for p in self.background_stars:
             log.debug("P {}".format(p.coord.pos))
-            p.draw(surface, offset, scale)
+            p.draw(surface, camera)
 
-        if GravitySim.draw_soi is True:
-            for p in self.planets:
-                p.draw_sphere_of_influence(surface, offset, scale)
+    def draw_planets(self, surface, camera):
+        log.info("Drawing planets")
+
+        # build ordered list
+        ordered_list = []
+        for p in self.planets:
+            dist, _ = Coordinate.get_distance_and_radius_vector(camera.coord, p.coord)
+            ordered_list.append((p, dist))
+
+        for p, d in sorted(ordered_list, key=lambda ele: ele[1], reverse=True):
+            log.warning("D {}".format(d))
+            p.draw(surface, camera)
+
+            if GravitySim.draw_soi is True:
+                p.draw_sphere_of_influence(surface, camera)
 
