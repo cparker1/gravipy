@@ -113,7 +113,7 @@ class BackgroundStar(object):
         self.color = (255, 255, 255)
 
     def draw(self, surface, camera):
-        _, pos = camera.get_apparent_radius_and_draw_pos(self.coord, 0)
+        _, pos = camera.get_apparent_radius_and_draw_pos(self.coord, self.radius)
         if pos is not None:
             log.debug("Drawing background star: coord={}; radius={};".format(self.coord.pos, self.radius))
             pygame.draw.circle(surface,

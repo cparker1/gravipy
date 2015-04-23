@@ -62,7 +62,7 @@ def get_velocity_for_circular_orbit(parent, pos):
 def generate_background_star_field(num_stars):
     star_list = []
     for _ in range(num_stars):
-        args = {"pos": Coordinate.get_random_coordinate(100000, 200000),
+        args = {"pos": Coordinate.get_random_coordinate(100000),
                 "vel": Coordinate.get_empty_coord(),
                 "radius": random.randrange(1, 3)}
         star_list.append(args)
@@ -142,7 +142,6 @@ class GravitySim(object):
     @classmethod
     def delete_dead_planets(cls, planets, dead_planets):
         for p in dead_planets:
-            log.warning("REMOVING PLANET {}".format(p.name))
             planets.remove(p)
 
     @classmethod
@@ -183,7 +182,6 @@ class GravitySim(object):
             ordered_list.append((p, dist))
 
         for p, d in sorted(ordered_list, key=lambda ele: ele[1], reverse=True):
-            log.warning("D {}".format(d))
             p.draw(surface, camera)
 
             if GravitySim.draw_soi is True:

@@ -41,7 +41,7 @@ config = {
     "dimensions": (1680, 900),
     "gravitational_constant": 0.1,
     "draw_sphere_of_influence": False,
-    "num_bg_stars": 0}
+    "num_bg_stars": 150}
 
 black = 0, 0, 0
 
@@ -76,7 +76,7 @@ while 1:
                 log.info("Restarting simulation")
                 sim.reset()
                 cam.reset()
-                
+
         cam.handle_event(event)
 
     cam.update()

@@ -14,8 +14,8 @@ class Coordinate(object):
 
     @classmethod
     def get_distance_and_radius_vector(cls, CoordA, CoordB):
-        radius_vector = CoordB.pos - CoordA.pos
-        return np.linalg.norm(radius_vector), radius_vector
+        radius_vector = (1.0) * (CoordB.pos - CoordA.pos)
+        return np.sqrt(radius_vector.dot(radius_vector)), radius_vector
 
     @classmethod
     def get_empty_coord(cls):
@@ -26,11 +26,13 @@ class Coordinate(object):
         return np.array([0 for _ in range(cls.DIMENSIONS)])
 
     @classmethod
-    def get_random_coordinate(cls, min, max):
-        def randvalue(min, max):
-            return random.sample([1, -1], 1)[0] * random.randrange(min, max)
-
-        return [randvalue(min, max) for _ in range(cls.DIMENSIONS)]
+    def get_random_coordinate(cls, radius_from_zero):
+        pitch = random.sample(np.arange(0, np.math.pi, np.math.pi/180), 1)[0]
+        yaw = random.sample(np.arange(0, 2 * np.math.pi, np.math.pi/180), 1)[0]
+        x = radius_from_zero * np.math.sin(pitch) * np.math.cos(yaw)
+        y = radius_from_zero * np.math.sin(pitch) * np.math.sin(yaw)
+        z = radius_from_zero * np.math.cos(pitch)
+        return np.array([x, y, z])
 
 
     @classmethod

@@ -22,10 +22,10 @@ class Camera(object):
         self.up = None
         self.right = None
         self.screen_diagonal = np.math.sqrt(screen_dims[0] ** 2 + screen_dims[1] ** 2) / 2
-        self.field_of_view = np.math.pi / 2.0
+        self.field_of_view = np.math.pi / 3.0
         self.get_direction_vectors()
 
-        self.zoom_rate = 20
+        self.zoom_rate = 200
         self.zoom_multiplier = 1.0
         self.degrees_per_turn = 5
         self.camera_is_moving = False
@@ -55,7 +55,7 @@ class Camera(object):
         rz = np.math.cos(np.math.pi / 2)
         self.right = np.array([rx, ry, rz])
 
-        log.warning("Pitch: {}; Yaw: {}".format(self.pitch, self.yaw))
+        log.debug("Pitch: {}; Yaw: {}".format(self.pitch, self.yaw))
         log.debug("Facing: {}".format(self.facing))
         log.debug("Up    : {}".format(self.up))
         log.debug("Right : {}".format(self.right))
@@ -63,14 +63,17 @@ class Camera(object):
     def get_apparent_radius_and_draw_pos(self, target_coord, target_radius):
         log.debug("Camera Pos: {} Target Pos: {}".format(self.coord.pos, target_coord.pos))
         distance, vector_to_coord = Coordinate.get_distance_and_radius_vector(self.coord, target_coord)
-        log.debug("Distance: {} Radius: {}".format(distance, vector_to_coord))
+        log.debug("Distance: {} Radius: {} Rad.Rad: {}".format(distance, vector_to_coord, vector_to_coord.dot(vector_to_coord)))
         face_dot_radius = np.dot(self.facing, vector_to_coord)
+        log.debug("Face.radius: {}; distance: {}".format(face_dot_radius, distance))
 
         def clean_cos(cos_angle):
             return min(1,max(cos_angle,-1))
 
+        log.debug("Face.radius / distance: {}".format(face_dot_radius / distance))
         apparent_angle = np.math.acos(clean_cos(face_dot_radius / distance))
         log.debug("Apparent angle away from center: {} [rad]".format(apparent_angle))
+
         log.debug("Target Radius: {} Rad/Distance: {}".format(target_radius, target_radius / distance))
         if target_radius < distance:
             apparent_solid_angle = np.math.asin((target_radius / distance))
@@ -80,8 +83,10 @@ class Camera(object):
         target_screen_radius = (apparent_solid_angle / self.field_of_view) * self.screen_diagonal
         log.debug("Target's Screen Radius: {}".format(target_screen_radius))
         if face_dot_radius < 0 or self.field_of_view < apparent_angle:
+            log.debug("Object is not visible")
             return 0, None
         elif apparent_angle < np.math.pi / 180:
+            log.debug("Moving object at {} with apparent angle < 1 degree to (0,0)".format(target_coord.pos))
             return target_screen_radius, np.array([(self.screen_dims[0] / 2), (self.screen_dims[1] / 2)])
         else:
             pos_scale = apparent_angle / self.field_of_view
