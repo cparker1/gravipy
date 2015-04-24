@@ -12,6 +12,7 @@ class Camera(object):
     """
     This is the object that represents the observer's position.
     """
+
     def __init__(self, pos, screen_dims):
         self.initial_pos = pos
         self.screen_dims = screen_dims
@@ -24,7 +25,7 @@ class Camera(object):
         self.screen_diagonal = np.math.sqrt(screen_dims[0] ** 2 + screen_dims[1] ** 2) / 2
         # self.horizontal_field_of_view = np.math.pi / 3.0
         # self.vertical_field_of_view = np.math.pi / 4.0
-        self.field_of_view = np.math.pi / 2.0
+        self.field_of_view = np.math.pi / 3.0
         self.get_direction_vectors()
 
         self.zoom_rate = 200
@@ -33,6 +34,19 @@ class Camera(object):
         self.camera_is_moving = False
         self.initial_mouse_pos = None
         self.update_background = False
+
+        self.key_mappings = {
+            pygame.K_DOWN: self.look_down,
+            pygame.K_UP: self.look_up,
+            pygame.K_LEFT: self.look_left,
+            pygame.K_RIGHT: self.look_right,
+            pygame.K_a: self.strafe_left,
+            pygame.K_d: self.strafe_right,
+            pygame.K_w: self.move_forward,
+            pygame.K_s: self.move_backward,
+            pygame.K_z: self.move_up,
+            pygame.K_x: self.move_down
+            }
 
     def reset(self):
         """
@@ -126,13 +140,10 @@ class Camera(object):
     def move_backward(self):
         self.update_background = True
         self.coord.pos -= self.zoom_multiplier * self.zoom_rate * self.facing
-        self.zoom_multiplier += 0.05
 
     def move_forward(self):
         self.update_background = True
         self.coord.pos += self.zoom_multiplier * self.zoom_rate * self.facing
-        if 1.0 < self.zoom_multiplier:
-            self.zoom_multiplier -= 0.05
 
     def look_up(self):
         self.update_background = True
@@ -146,6 +157,14 @@ class Camera(object):
         if np.math.pi < self.pitch:
             self.pitch = np.math.pi
 
+    def move_up(self):
+        self.update_background = True
+        self.coord.pos -= self.zoom_multiplier * self.zoom_rate * self.up
+
+    def move_down(self):
+        self.update_background = True
+        self.coord.pos += self.zoom_multiplier * self.zoom_rate * self.up
+
     def look_left(self):
         self.update_background = True
         self.yaw -= self.degrees_per_turn * np.math.pi / 180
@@ -157,6 +176,14 @@ class Camera(object):
         self.yaw += self.degrees_per_turn * np.math.pi / 180
         if 2 * np.math.pi < self.yaw:
             self.yaw -= 2 * np.math.pi
+
+    def strafe_left(self):
+        self.update_background = True
+        self.coord.pos -= self.zoom_multiplier * self.zoom_rate * self.right
+
+    def strafe_right(self):
+        self.update_background = True
+        self.coord.pos += self.zoom_multiplier * self.zoom_rate * self.right
 
     def need_upgrade_background(self):
         if self.update_background is True:
@@ -177,17 +204,8 @@ class Camera(object):
 
         # Handle Keyboard Inputs for turning
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_w:
-                self.look_down()
-
-            if event.key == pygame.K_s:
-                self.look_up()
-
-            if event.key == pygame.K_a:
-                self.look_left()
-
-            if event.key == pygame.K_d:
-                self.look_right()
+            if event.key in self.key_mappings.keys():
+                self.key_mappings[event.key]()
 
 
 
