@@ -56,7 +56,7 @@ planets = planets1 + planets2 + planets3
 planets2 = game.generate_star_system_config("Sol", (10, 10, 0), 5)
 
 sim = game.GravitySim(planets2, config)
-cam = camera.Camera(np.array([2000, 0, 300]), config["dimensions"])
+cam = camera.Camera(np.array([0, -5000, 300]), config["dimensions"])
 screen = pygame.display.set_mode(config["dimensions"])
 background = pygame.Surface(config["dimensions"])
 

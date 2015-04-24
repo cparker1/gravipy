@@ -122,11 +122,6 @@ class Camera(object):
         apparent_target_radius = (apparent_solid_angle / self.field_of_view) * self.screen_diagonal
         log.debug("Target's Screen Radius: {}".format(apparent_target_radius))
 
-        # Return a zero coordinate if the apparent angle is nearly zero
-        if apparent_angle < np.math.pi / 360:
-            log.debug("Moving object at {} with apparent angle < 1 degree to (0,0)".format(target_coord.pos))
-            return apparent_target_radius, np.array([(self.screen_dims[0] / 2), (self.screen_dims[1] / 2)])
-
         # If we've made it this far, calculate the position of the target
         angular_scale = apparent_angle / self.field_of_view
         horizontal_scale = angular_scale * self.screen_dims[0]
