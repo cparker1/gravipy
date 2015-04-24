@@ -57,6 +57,7 @@ planets = game.generate_star_system_config("Sol", (10, 10, 0), 5)
 
 sim = game.GravitySim(planets, config)
 screen = pygame.display.set_mode(config["dimensions"])
+background = pygame.Surface(config["dimensions"])
 clock = pygame.time.Clock()
 clock.tick()
 clock.get_time()
@@ -78,12 +79,15 @@ while 1:
                 cam.reset()
 
         cam.handle_event(event)
+        if cam.need_upgrade_background() is True:
+            background.fill(black)
+            sim.draw_background(background, cam)
 
     cam.update()
     sim.update_planets(timestep)
 
     screen.fill(black)
-    sim.draw_background(screen, cam)
+    screen.blit(background, (0, 0))
     sim.draw_planets(screen, cam)
     pygame.display.flip()
 

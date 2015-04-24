@@ -30,6 +30,7 @@ class Camera(object):
         self.degrees_per_turn = 5
         self.camera_is_moving = False
         self.initial_mouse_pos = None
+        self.update_background = False
 
     def reset(self):
         """
@@ -94,37 +95,50 @@ class Camera(object):
             projection = (vector_to_coord - ((face_dot_radius / distance) * vector_to_coord))
             projection_len = np.linalg.norm(projection)
             x = (self.screen_dims[0] / 2) + screen_position_radius * np.dot(projection, self.right) / projection_len
-            y = (self.screen_dims[1] / 2) + screen_position_radius * np.dot(projection, self.up) / projection_len
+            y = (self.screen_dims[1] / 2) + 1.5 * screen_position_radius * np.dot(projection, self.up) / projection_len
             return target_screen_radius, np.round(np.array([x, y])).astype(int)
 
     def move_backward(self):
+        self.update_background = True
         self.coord.pos -= self.zoom_multiplier * self.zoom_rate * self.facing
         self.zoom_multiplier += 0.05
 
     def move_forward(self):
+        self.update_background = True
         self.coord.pos += self.zoom_multiplier * self.zoom_rate * self.facing
         if 1.0 < self.zoom_multiplier:
             self.zoom_multiplier -= 0.05
 
     def look_up(self):
+        self.update_background = True
         self.pitch -= self.degrees_per_turn * np.math.pi / 180
         if self.pitch < 0:
             self.pitch = 0
 
     def look_down(self):
+        self.update_background = True
         self.pitch += self.degrees_per_turn * np.math.pi / 180
         if np.math.pi < self.pitch:
             self.pitch = np.math.pi
 
     def look_left(self):
+        self.update_background = True
         self.yaw -= self.degrees_per_turn * np.math.pi / 180
         if self.yaw < 0:
             self.yaw += 2 * np.math.pi
 
     def look_right(self):
+        self.update_background = True
         self.yaw += self.degrees_per_turn * np.math.pi / 180
         if 2 * np.math.pi < self.yaw:
             self.yaw -= 2 * np.math.pi
+
+    def need_upgrade_background(self):
+        if self.update_background is True:
+            self.update_background = False
+            return True
+        else:
+            return False
 
     def update(self):
         pass
