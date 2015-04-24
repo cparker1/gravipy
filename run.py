@@ -8,15 +8,18 @@ import time
 import os
 import numpy as np
 import camera
+from utils import clean_filename
 
-if not os.path.isdir('./log'):
-    os.mkdir("./log")
-log_dir = "./log/{}".format(time.asctime().replace(' ', '').replace(':', ''))
-if not os.path.isdir(log_dir):
-    os.mkdir(log_dir)
+logs_directory = '/tmp/gravipy_log' or os.path.join(os.path.dirname(os.path.realpath(__file__)), 'log')
+
+if os.path.exists(logs_directory) and not os.path.isdir(logs_directory):
+    raise IOError("Log directory choice is not a real directory!")
+current_log = os.path.join(logs_directory, clean_filename(time.asctime()))
+os.makedirs(current_log, mode=744)
+
 
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-fh = logging.FileHandler("{}/run.log".format(log_dir))
+fh = logging.FileHandler(os.path.join(current_log, 'run.log'))
 fh.setLevel(logging.DEBUG)
 fh.setFormatter(formatter)
 
