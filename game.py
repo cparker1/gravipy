@@ -62,7 +62,7 @@ def get_velocity_for_circular_orbit(parent, pos):
 def generate_background_star_field(num_stars):
     star_list = []
     for _ in range(num_stars):
-        args = {"pos": Coordinate.get_random_coordinate(100000),
+        args = {"pos": Coordinate.get_random_coordinate(10000000.0),
                 "vel": Coordinate.get_empty_coord(),
                 "radius": random.randrange(1, 3)}
         star_list.append(args)

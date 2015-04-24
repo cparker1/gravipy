@@ -24,7 +24,7 @@ class Camera(object):
         self.screen_diagonal = np.math.sqrt(screen_dims[0] ** 2 + screen_dims[1] ** 2) / 2
         # self.horizontal_field_of_view = np.math.pi / 3.0
         # self.vertical_field_of_view = np.math.pi / 4.0
-        self.field_of_view = np.math.pi / 3.0
+        self.field_of_view = np.math.pi / 2.0
         self.get_direction_vectors()
 
         self.zoom_rate = 200
@@ -115,8 +115,8 @@ class Camera(object):
 
         # If we've made it this far, calculate the position of the target
         angular_scale = apparent_angle / self.field_of_view
-        horizontal_scale = angular_scale * self.screen_dims[0] / 2
-        vertical_scale = angular_scale * self.screen_dims[1] / 2
+        horizontal_scale = angular_scale * self.screen_dims[0]
+        vertical_scale = angular_scale * self.screen_dims[1]
         projection = (vector_to_coord - ((face_dot_radius / distance) * vector_to_coord))
         projection_len = np.linalg.norm(projection)
         x = (self.screen_dims[0] / 2) + horizontal_scale * np.dot(projection, self.right) / projection_len

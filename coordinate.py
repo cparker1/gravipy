@@ -14,7 +14,7 @@ class Coordinate(object):
 
     @classmethod
     def get_distance_and_radius_vector(cls, CoordA, CoordB):
-        radius_vector = 1.0 * (CoordB.pos - CoordA.pos)
+        radius_vector = (1.0) * (CoordB.pos - CoordA.pos)
         return np.sqrt(radius_vector.dot(radius_vector)), radius_vector
 
     @classmethod
@@ -27,7 +27,7 @@ class Coordinate(object):
 
     @classmethod
     def get_random_coordinate(cls, radius_from_zero):
-        pitch = random.sample(np.arange(0, np.math.pi, np.math.pi/180), 1)[0]
+        pitch = random.sample(np.arange(1 * np.math.pi / 8, 7 * np.math.pi / 8, np.math.pi/180), 1)[0]
         yaw = random.sample(np.arange(0, 2 * np.math.pi, np.math.pi/180), 1)[0]
         x = radius_from_zero * np.math.sin(pitch) * np.math.cos(yaw)
         y = radius_from_zero * np.math.sin(pitch) * np.math.sin(yaw)
