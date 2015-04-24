@@ -112,7 +112,7 @@ class Camera(object):
         # Calculate the apparent size of the target object
         log.debug("Target Radius: {} [m]".format(target_radius))
         if target_radius < distance:
-            apparent_solid_angle = np.math.asin((target_radius / distance)) / 2
+            apparent_solid_angle = np.math.asin((target_radius / distance))
         else:
             apparent_solid_angle = np.math.pi / 3.0
 
