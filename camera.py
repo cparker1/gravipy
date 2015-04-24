@@ -23,9 +23,8 @@ class Camera(object):
         self.up = None
         self.right = None
         self.screen_diagonal = np.math.sqrt(screen_dims[0] ** 2 + screen_dims[1] ** 2) / 2
-        # self.horizontal_field_of_view = np.math.pi / 3.0
-        # self.vertical_field_of_view = np.math.pi / 4.0
         self.field_of_view = np.math.pi / 3.0
+        self.projection_plane_distance = self.screen_diagonal / np.math.atan(self.field_of_view)
         self.get_direction_vectors()
 
         self.zoom_rate = 200
@@ -123,13 +122,11 @@ class Camera(object):
         log.debug("Target's Screen Radius: {}".format(apparent_target_radius))
 
         # If we've made it this far, calculate the position of the target
-        angular_scale = apparent_angle / self.field_of_view
-        horizontal_scale = angular_scale * self.screen_dims[0]
-        vertical_scale = angular_scale * self.screen_dims[1]
-        projection = (vector_to_coord - ((face_dot_radius / distance) * vector_to_coord))
-        projection_len = np.linalg.norm(projection)
-        x = (self.screen_dims[0] / 2) + horizontal_scale * np.dot(projection, self.right) / projection_len
-        y = (self.screen_dims[1] / 2) + vertical_scale * np.dot(projection, self.up) / projection_len
+        vector_scale = self.projection_plane_distance / face_dot_radius
+        projection = vector_scale * (vector_to_coord - ((face_dot_radius / distance) * self.facing))
+        x = (self.screen_dims[0] / 2) + np.dot(projection, self.right)
+        y = (self.screen_dims[1] / 2) + np.dot(projection, self.up)
+
         return apparent_target_radius, np.round(np.array([x, y])).astype(int)
 
     def move_backward(self):
@@ -201,7 +198,5 @@ class Camera(object):
         if event.type == pygame.KEYDOWN:
             if event.key in self.key_mappings.keys():
                 self.key_mappings[event.key]()
-
-
 
             self.get_direction_vectors()
