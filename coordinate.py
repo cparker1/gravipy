@@ -14,7 +14,7 @@ class Coordinate(object):
 
     @classmethod
     def get_distance_and_radius_vector(cls, CoordA, CoordB):
-        radius_vector = (1.0) * (CoordB.pos - CoordA.pos)
+        radius_vector = 1.0 * (CoordB.pos - CoordA.pos)
         return np.sqrt(radius_vector.dot(radius_vector)), radius_vector
 
     @classmethod

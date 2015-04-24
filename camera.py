@@ -22,6 +22,8 @@ class Camera(object):
         self.up = None
         self.right = None
         self.screen_diagonal = np.math.sqrt(screen_dims[0] ** 2 + screen_dims[1] ** 2) / 2
+        # self.horizontal_field_of_view = np.math.pi / 3.0
+        # self.vertical_field_of_view = np.math.pi / 4.0
         self.field_of_view = np.math.pi / 3.0
         self.get_direction_vectors()
 
@@ -56,47 +58,70 @@ class Camera(object):
         rz = np.math.cos(np.math.pi / 2)
         self.right = np.array([rx, ry, rz])
 
-        log.debug("Pitch: {}; Yaw: {}".format(self.pitch, self.yaw))
-        log.debug("Facing: {}".format(self.facing))
-        log.debug("Up    : {}".format(self.up))
-        log.debug("Right : {}".format(self.right))
+        log.debug("Pitch: {} [rad]; Yaw: {} [rad]".format(self.pitch, self.yaw))
+        log.debug("Facing: {} [unitless]".format(self.facing))
+        log.debug("Up    : {} [unitless]".format(self.up))
+        log.debug("Right : {} [unitless]".format(self.right))
 
     def get_apparent_radius_and_draw_pos(self, target_coord, target_radius):
-        log.debug("Camera Pos: {} Target Pos: {}".format(self.coord.pos, target_coord.pos))
-        distance, vector_to_coord = Coordinate.get_distance_and_radius_vector(self.coord, target_coord)
-        log.debug("Distance: {} Radius: {} Rad.Rad: {}".format(distance, vector_to_coord, vector_to_coord.dot(vector_to_coord)))
-        face_dot_radius = np.dot(self.facing, vector_to_coord)
-        log.debug("Face.radius: {}; distance: {}".format(face_dot_radius, distance))
 
+        # If the target is not visible, return no radius and no position
+        def not_visible():
+            return 0, None
+
+        # Ensure the arc cos gets a value between [-1, 1]
         def clean_cos(cos_angle):
             return min(1,max(cos_angle,-1))
 
-        log.debug("Face.radius / distance: {}".format(face_dot_radius / distance))
+        # Calculate the vector that points from the camera to the target
+        log.debug("Camera Pos: {} [m]; Target Pos: {} [m]".format(self.coord.pos, target_coord.pos))
+        distance, vector_to_coord = Coordinate.get_distance_and_radius_vector(self.coord, target_coord)
+        log.debug("Distance: {} Radius: {}".format(distance, vector_to_coord))
+
+        # Calculate the component of the target vector that is parallel to the facing vector
+        face_dot_radius = np.dot(self.facing, vector_to_coord)
+        log.debug("Face.radius: {} [m**2]; distance: {} [m]".format(face_dot_radius, distance))
+
+        # If the facing vector dotted with the target vector is negative,
+        # the target is behind the camera.  Return to save time.
+        if face_dot_radius < 0:
+            return not_visible()
+
+        # Calculate the apparent angular distance from the facing vector
+        # to the target vector
         apparent_angle = np.math.acos(clean_cos(face_dot_radius / distance))
         log.debug("Apparent angle away from center: {} [rad]".format(apparent_angle))
 
-        log.debug("Target Radius: {} Rad/Distance: {}".format(target_radius, target_radius / distance))
+        # Return if the target is outside the field of view
+        if self.field_of_view < apparent_angle:
+            return not_visible()
+
+        # Calculate the apparent size of the target object
+        log.debug("Target Radius: {} [m]".format(target_radius))
         if target_radius < distance:
-            apparent_solid_angle = np.math.asin((target_radius / distance))
+            apparent_solid_angle = np.math.asin((target_radius / distance)) / 2
         else:
-            apparent_solid_angle = np.math.pi / 4
-        log.debug("Apparent Solid Angle: {}".format(apparent_solid_angle))
-        target_screen_radius = (apparent_solid_angle / self.field_of_view) * self.screen_diagonal
-        log.debug("Target's Screen Radius: {}".format(target_screen_radius))
-        if face_dot_radius < 0 or self.field_of_view < apparent_angle:
-            log.debug("Object is not visible")
-            return 0, None
-        elif apparent_angle < np.math.pi / 180:
+            apparent_solid_angle = np.math.pi / 3.0
+
+        # Determine the apparent size of the target object
+        log.debug("Apparent Solid Angle: {} [rad]".format(apparent_solid_angle))
+        apparent_target_radius = (apparent_solid_angle / self.field_of_view) * self.screen_diagonal
+        log.debug("Target's Screen Radius: {}".format(apparent_target_radius))
+
+        # Return a zero coordinate if the apparent angle is nearly zero
+        if apparent_angle < np.math.pi / 360:
             log.debug("Moving object at {} with apparent angle < 1 degree to (0,0)".format(target_coord.pos))
-            return target_screen_radius, np.array([(self.screen_dims[0] / 2), (self.screen_dims[1] / 2)])
-        else:
-            pos_scale = apparent_angle / self.field_of_view
-            screen_position_radius = pos_scale * self.screen_diagonal
-            projection = (vector_to_coord - ((face_dot_radius / distance) * vector_to_coord))
-            projection_len = np.linalg.norm(projection)
-            x = (self.screen_dims[0] / 2) + screen_position_radius * np.dot(projection, self.right) / projection_len
-            y = (self.screen_dims[1] / 2) + 1.5 * screen_position_radius * np.dot(projection, self.up) / projection_len
-            return target_screen_radius, np.round(np.array([x, y])).astype(int)
+            return apparent_target_radius, np.array([(self.screen_dims[0] / 2), (self.screen_dims[1] / 2)])
+
+        # If we've made it this far, calculate the position of the target
+        angular_scale = apparent_angle / self.field_of_view
+        horizontal_scale = angular_scale * self.screen_dims[0] / 2
+        vertical_scale = angular_scale * self.screen_dims[1] / 2
+        projection = (vector_to_coord - ((face_dot_radius / distance) * vector_to_coord))
+        projection_len = np.linalg.norm(projection)
+        x = (self.screen_dims[0] / 2) + horizontal_scale * np.dot(projection, self.right) / projection_len
+        y = (self.screen_dims[1] / 2) + vertical_scale * np.dot(projection, self.up) / projection_len
+        return apparent_target_radius, np.round(np.array([x, y])).astype(int)
 
     def move_backward(self):
         self.update_background = True

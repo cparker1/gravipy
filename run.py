@@ -56,13 +56,17 @@ pygame.init()
 planets = game.generate_star_system_config("Sol", (10, 10, 0), 5)
 
 sim = game.GravitySim(planets, config)
+cam = camera.Camera(np.array([2000, 0, 300]), config["dimensions"])
 screen = pygame.display.set_mode(config["dimensions"])
 background = pygame.Surface(config["dimensions"])
+
+background.fill(black)
+sim.draw_background(background, cam)
+
 clock = pygame.time.Clock()
 clock.tick()
 clock.get_time()
 
-cam = camera.Camera(np.array([2000, 0, 300]), config["dimensions"])
 timestep = 5
 
 while 1:
