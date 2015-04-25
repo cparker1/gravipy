@@ -7,6 +7,7 @@ import numpy as np
 import itertools
 from coordinate import Coordinate
 import random
+import pygame
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -68,7 +69,7 @@ def generate_background_star_field(num_stars):
         star_list.append(args)
     return star_list
 
-class GravitySim(object):
+class GravitySimulation(object):
     BIG_G = 0.005
     draw_soi = False
 
@@ -79,8 +80,29 @@ class GravitySim(object):
         self.background_stars = set()
         self.total_energy = 0
         self.create_simulation(self.planet_configs, self.sim_config)
-        GravitySim.big_g = sim_config["gravitational_constant"]
-        GravitySim.draw_soi = sim_config["draw_sphere_of_influence"]
+        self._planets = itertools.cycle(self.planets)
+        GravitySimulation.big_g = sim_config["gravitational_constant"]
+        GravitySimulation.draw_soi = sim_config["draw_sphere_of_influence"]
+        self.planets_to_follow = [(a, b) for a, b in enumerate(self.planets)]
+        self.following = False
+        self.following_idx = 0
+        self.tracking = False
+
+    # TODO: This feels dumb as shit...
+    def get_next_valid_planet_index(self, index):
+        index += 1
+        length = len(self.planets)
+        if length <= index:
+            index = 0
+
+        return index
+
+    def get_next_planet_to_follow(self):
+        self.following_idx = self.get_next_valid_planet_index(self.following_idx)
+
+    @property
+    def planet_to_follow(self):
+        return self.planets_to_follow[self.following_idx][1]
 
     def create_simulation(self, planet_configs, sim_config):
         log.info("Creating simulation.")
@@ -160,6 +182,29 @@ class GravitySim(object):
             ret_val += p.get_potential_energy()
         return ret_val
 
+    def handle_event(self, event):
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_n:
+                self.get_next_planet_to_follow()
+                self.following = True
+                log.info("Now following {}".format(self.planet_to_follow.name))
+
+            if event.key == pygame.K_m:
+                if self.following is True:
+                    self.tracking = True
+
+            if event.key == pygame.K_b:
+                self.following = False
+
+    def update_sim(self, camera):
+        if self.following is True:
+            camera.set_origin(self.planet_to_follow.coord)
+
+        if self.tracking is True:
+            camera.point_towards_target(self.planet_to_follow.coord)
+            self.tracking = False
+
+
     def update_planets(self, dt):
         log.info("UPDATING POSITIONS")
         self.update_positions(dt, self.planets)
@@ -184,6 +229,6 @@ class GravitySim(object):
         for p, d in sorted(ordered_list, key=lambda ele: ele[1], reverse=True):
             p.draw(surface, camera)
 
-            if GravitySim.draw_soi is True:
+            if GravitySimulation.draw_soi is True:
                 p.draw_sphere_of_influence(surface, camera)
 

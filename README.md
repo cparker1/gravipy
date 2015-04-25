@@ -29,3 +29,6 @@ qui officia deserunt mollit anim id est laborum.
 |         d               |    Pan right                               |
 |         z               |    Move upwards                            |
 |         x               |    Move downwards                          |
+|         n               |    Follow next planetary body              |
+|         m               |    Snap focus to followed planetary body   |
+|         b               |    Stop focusing/following                 |

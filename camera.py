@@ -4,6 +4,7 @@ from coordinate import Coordinate
 import numpy as np
 import pygame
 import logging
+import math
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -16,15 +17,17 @@ class Camera(object):
     def __init__(self, pos, screen_dims):
         self.initial_pos = pos
         self.screen_dims = screen_dims
-        self.coord = Coordinate(pos, vel=Coordinate.get_empty_coord())
-        self.pitch = np.math.pi / 2
-        self.yaw = np.math.pi / 2
+        self.displacement = Coordinate(pos, vel=Coordinate.get_empty_coord())
+        self.origin = Coordinate(Coordinate.get_empty_coord(), Coordinate.get_empty_coord())
+        self.displacement = Coordinate(Coordinate.get_empty_coord(), Coordinate.get_empty_coord())
+        self.pitch = math.pi / 2
+        self.yaw = math.pi / 2
         self.facing = None
         self.up = None
         self.right = None
-        self.screen_diagonal = np.math.sqrt(screen_dims[0] ** 2 + screen_dims[1] ** 2) / 2
-        self.field_of_view = np.math.pi / 3.0
-        self.projection_plane_distance = self.screen_diagonal / np.math.atan(self.field_of_view)
+        self.screen_diagonal = math.sqrt(screen_dims[0] ** 2 + screen_dims[1] ** 2) / 2
+        self.field_of_view = math.pi / 3.0
+        self.projection_plane_distance = self.screen_diagonal / math.atan(self.field_of_view)
         self.get_direction_vectors()
 
         self.zoom_rate = 200
@@ -47,6 +50,10 @@ class Camera(object):
             pygame.K_x: self.move_down
             }
 
+    @property
+    def coord(self):
+        return Coordinate(self.origin.pos + self.displacement.pos, self.origin.vel + self.displacement.vel)
+
     def reset(self):
         """
         Placeholder.  For now I don't want the
@@ -55,20 +62,27 @@ class Camera(object):
         """
         pass
 
+    @staticmethod
+    def clean_cos(acos_arg):
+        """
+        Rails the passed in argument between [-1, 1]
+        """
+        return min(1,max(acos_arg,-1))
+
     def get_direction_vectors(self):
-        fx = np.math.sin(self.pitch) * np.math.cos(self.yaw)
-        fy = np.math.sin(self.pitch) * np.math.sin(self.yaw)
-        fz = np.math.cos(self.pitch)
+        fx = math.sin(self.pitch) * math.cos(self.yaw)
+        fy = math.sin(self.pitch) * math.sin(self.yaw)
+        fz = math.cos(self.pitch)
         self.facing = np.array([fx, fy, fz])
 
-        ux = np.math.sin(self.pitch - np.math.pi / 2) * np.math.cos(self.yaw)
-        uy = np.math.sin(self.pitch - np.math.pi / 2) * np.math.sin(self.yaw)
-        uz = np.math.cos(self.pitch - np.math.pi / 2)
+        ux = math.sin(self.pitch - math.pi / 2) * math.cos(self.yaw)
+        uy = math.sin(self.pitch - math.pi / 2) * math.sin(self.yaw)
+        uz = math.cos(self.pitch - math.pi / 2)
         self.up = np.array([ux, uy, uz])
 
-        rx = np.math.sin(np.math.pi / 2) * np.math.cos(self.yaw + np.math.pi / 2)
-        ry = np.math.sin(np.math.pi / 2) * np.math.sin(self.yaw + np.math.pi / 2)
-        rz = np.math.cos(np.math.pi / 2)
+        rx = math.sin(math.pi / 2) * math.cos(self.yaw + math.pi / 2)
+        ry = math.sin(math.pi / 2) * math.sin(self.yaw + math.pi / 2)
+        rz = math.cos(math.pi / 2)
         self.right = np.array([rx, ry, rz])
 
         log.debug("Pitch: {} [rad]; Yaw: {} [rad]".format(self.pitch, self.yaw))
@@ -76,19 +90,32 @@ class Camera(object):
         log.debug("Up    : {} [unitless]".format(self.up))
         log.debug("Right : {} [unitless]".format(self.right))
 
+    def point_towards_target(self, target_coord):
+        log.debug("Facing target coordinate {}".format(target_coord.pos))
+        distance, target_vector = Coordinate.get_distance_and_radius_vector(self.coord, target_coord)
+        normalized_vector = target_vector / distance
+        pitch = math.acos(Camera.clean_cos(normalized_vector[2]))
+        yaw = math.acos(Camera.clean_cos(normalized_vector[0] / math.sin(pitch)))
+        self.pitch = pitch
+        self.yaw = yaw
+        log.debug("New Pitch, Yaw = {}, {}".format(self.pitch, self.yaw))
+        self.get_direction_vectors()
+        self.update_background = True
+
+    def set_origin(self, coord):
+        log.debug("Setting origin to {}".format(coord.pos))
+        self.origin.pos = coord.pos + np.array([0, 500, 0])
+
     def get_apparent_radius_and_draw_pos(self, target_coord, target_radius):
 
         # If the target is not visible, return no radius and no position
         def not_visible():
             return 0, None
 
-        # Ensure the arc cos gets a value between [-1, 1]
-        def clean_cos(cos_angle):
-            return min(1,max(cos_angle,-1))
-
         # Calculate the vector that points from the camera to the target
-        log.debug("Camera Pos: {} [m]; Target Pos: {} [m]".format(self.coord.pos, target_coord.pos))
-        distance, vector_to_coord = Coordinate.get_distance_and_radius_vector(self.coord, target_coord)
+        coord = Coordinate(self.origin.pos + self.displacement.pos, self.origin.vel + self.displacement.vel)
+        log.debug("Camera Pos: {} [m]; Target Pos: {} [m]".format(coord.pos, target_coord.pos))
+        distance, vector_to_coord = Coordinate.get_distance_and_radius_vector(coord, target_coord)
         log.debug("Distance: {} Radius: {}".format(distance, vector_to_coord))
 
         # Calculate the component of the target vector that is parallel to the facing vector
@@ -102,7 +129,7 @@ class Camera(object):
 
         # Calculate the apparent angular distance from the facing vector
         # to the target vector
-        apparent_angle = np.math.acos(clean_cos(face_dot_radius / distance))
+        apparent_angle = math.acos(Camera.clean_cos(face_dot_radius / distance))
         log.debug("Apparent angle away from center: {} [rad]".format(apparent_angle))
 
         # Return if the target is outside the field of view
@@ -112,9 +139,9 @@ class Camera(object):
         # Calculate the apparent size of the target object
         log.debug("Target Radius: {} [m]".format(target_radius))
         if target_radius < distance:
-            apparent_solid_angle = np.math.asin((target_radius / distance))
+            apparent_solid_angle = math.asin((target_radius / distance))
         else:
-            apparent_solid_angle = np.math.pi / 3.0
+            apparent_solid_angle = math.pi / 3.0
 
         # Determine the apparent size of the target object
         log.debug("Apparent Solid Angle: {} [rad]".format(apparent_solid_angle))
@@ -130,52 +157,46 @@ class Camera(object):
         return apparent_target_radius, np.round(np.array([x, y])).astype(int)
 
     def move_backward(self):
-        self.update_background = True
-        self.coord.pos -= self.zoom_multiplier * self.zoom_rate * self.facing
+        self.displacement.pos -= self.zoom_multiplier * self.zoom_rate * self.facing
 
     def move_forward(self):
-        self.update_background = True
-        self.coord.pos += self.zoom_multiplier * self.zoom_rate * self.facing
+        self.displacement.pos += self.zoom_multiplier * self.zoom_rate * self.facing
 
     def look_up(self):
         self.update_background = True
-        self.pitch -= self.degrees_per_turn * np.math.pi / 180
+        self.pitch -= self.degrees_per_turn * math.pi / 180
         if self.pitch < 0:
             self.pitch = 0
 
     def look_down(self):
         self.update_background = True
-        self.pitch += self.degrees_per_turn * np.math.pi / 180
-        if np.math.pi < self.pitch:
-            self.pitch = np.math.pi
+        self.pitch += self.degrees_per_turn * math.pi / 180
+        if math.pi < self.pitch:
+            self.pitch = math.pi
 
     def move_up(self):
-        self.update_background = True
-        self.coord.pos -= self.zoom_multiplier * self.zoom_rate * self.up
+        self.displacement.pos -= self.zoom_multiplier * self.zoom_rate * self.up
 
     def move_down(self):
-        self.update_background = True
-        self.coord.pos += self.zoom_multiplier * self.zoom_rate * self.up
+        self.displacement.pos += self.zoom_multiplier * self.zoom_rate * self.up
 
     def look_left(self):
         self.update_background = True
-        self.yaw -= self.degrees_per_turn * np.math.pi / 180
+        self.yaw -= self.degrees_per_turn * math.pi / 180
         if self.yaw < 0:
-            self.yaw += 2 * np.math.pi
+            self.yaw += 2 * math.pi
 
     def look_right(self):
         self.update_background = True
-        self.yaw += self.degrees_per_turn * np.math.pi / 180
-        if 2 * np.math.pi < self.yaw:
-            self.yaw -= 2 * np.math.pi
+        self.yaw += self.degrees_per_turn * math.pi / 180
+        if 2 * math.pi < self.yaw:
+            self.yaw -= 2 * math.pi
 
     def strafe_left(self):
-        self.update_background = True
-        self.coord.pos -= self.zoom_multiplier * self.zoom_rate * self.right
+        self.displacement.pos -= self.zoom_multiplier * self.zoom_rate * self.right
 
     def strafe_right(self):
-        self.update_background = True
-        self.coord.pos += self.zoom_multiplier * self.zoom_rate * self.right
+        self.displacement.pos += self.zoom_multiplier * self.zoom_rate * self.right
 
     def need_upgrade_background(self):
         if self.update_background is True:

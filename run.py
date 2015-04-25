@@ -43,8 +43,9 @@ camera.log.addHandler(fh)
 config = {
     "dimensions": (1680, 900),
     "gravitational_constant": 0.1,
-    "draw_sphere_of_influence": False,
-    "num_bg_stars": 10}
+    "draw_sphere_of_influence": True,
+    "num_bg_stars": 150,
+    "enable_movement": False}
 
 black = 0, 0, 0
 
@@ -53,12 +54,12 @@ pygame.init()
 
 planets1 = game.generate_star_system_config("Sol", (1000, 1000, 0), 1)
 planets2 = game.generate_star_system_config("Sol", (-8000, 1000, 0), 2)
-planets3 = game.generate_star_system_config("Sol", (8000, 10000, 0), 1)
+planets3 = game.generate_star_system_config("Sol", (8000, 10000, 0), 3)
 planets = planets1 + planets2 + planets3
 
 planets2 = game.generate_star_system_config("Sol", (10, 10, 0), 5)
 
-sim = game.GravitySim(planets2, config)
+sim = game.GravitySimulation(planets, config)
 cam = camera.Camera(np.array([0, -5000, 300]), config["dimensions"])
 screen = pygame.display.set_mode(config["dimensions"])
 background = pygame.Surface(config["dimensions"])
@@ -136,10 +137,13 @@ while 1:
                     pause = False
                     timewarp_image = get_timewarp_image()
 
+        sim.handle_event(event)
+
         cam.handle_event(event)
         if cam.need_upgrade_background() is True:
             background.fill(black)
             sim.draw_background(background, cam)
+
 
     screen.fill(black)
     screen.blit(background, (0, 0))
@@ -150,6 +154,7 @@ while 1:
     else:
         screen.blit(pause_image, (100, 100))
 
+    sim.update_sim(cam)
     sim.draw_planets(screen, cam)
     pygame.display.flip()
 
