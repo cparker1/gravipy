@@ -92,7 +92,8 @@ class Camera(object):
 
     def point_towards_target(self, target_coord):
         log.debug("Facing target coordinate {}".format(target_coord.pos))
-        distance, target_vector = Coordinate.get_distance_and_radius_vector(self.coord, target_coord)
+        coord = Coordinate(self.origin.pos + self.displacement.pos, self.origin.vel + self.displacement.vel)
+        distance, target_vector = Coordinate.get_distance_and_radius_vector(coord, target_coord)
         normalized_vector = target_vector / distance
         pitch = math.acos(Camera.clean_cos(normalized_vector[2]))
         yaw = math.acos(Camera.clean_cos(normalized_vector[0] / math.sin(pitch)))

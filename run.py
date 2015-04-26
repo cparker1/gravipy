@@ -52,10 +52,12 @@ black = 0, 0, 0
 
 pygame.init()
 
-planets1 = game.generate_star_system_config("Sol", (1000, 1000, 0), 1)
-planets2 = game.generate_star_system_config("Sol", (-8000, 1000, 0), 2)
-planets3 = game.generate_star_system_config("Sol", (8000, 10000, 0), 3)
-planets = planets1 + planets2 + planets3
+planets1 = game.generate_star_system_config("Sol", (1000, 1000, -4000), 1)
+planets2 = game.generate_star_system_config("Sol", (-15000, 1000, 0), 2)
+planets3 = game.generate_star_system_config("Sol", (8000, -10000, 4000), 1)
+planets4 = game.generate_star_system_config("Sol", (-8000, 1000, 8000), 1)
+planets5 = game.generate_star_system_config("Sol", (4000, -4000, 4000), 1)
+planets = planets1 + planets2 + planets3 + planets4 + planets5
 
 planets2 = game.generate_star_system_config("Sol", (10, 10, 0), 5)
 

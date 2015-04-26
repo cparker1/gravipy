@@ -56,7 +56,7 @@ def get_velocity_for_circular_orbit(parent, pos):
     dist = np.linalg.norm(radius)
 
     vel_norm = np.cross(radius / dist, np.array([0, 0, 1]))
-    speed = 1.3 * np.math.sqrt(0.005 * parent["mass"] / dist)
+    speed = 1.3 * np.math.sqrt(0.5 * parent["mass"] / dist)
     return speed * vel_norm
 
 
@@ -70,7 +70,7 @@ def generate_background_star_field(num_stars):
     return star_list
 
 class GravitySimulation(object):
-    BIG_G = 0.005
+    BIG_G = 0.5
     draw_soi = False
 
     def __init__(self, planet_configs, sim_config):
