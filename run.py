@@ -43,7 +43,7 @@ camera.log.addHandler(fh)
 config = {
     "dimensions": (1680, 900),
     "gravitational_constant": 0.1,
-    "draw_sphere_of_influence": True,
+    "draw_sphere_of_influence": False,
     "num_bg_stars": 150,
     "enable_movement": False}
 
@@ -59,7 +59,7 @@ planets = planets1 + planets2 + planets3
 
 planets2 = game.generate_star_system_config("Sol", (10, 10, 0), 5)
 
-sim = game.GravitySimulation(planets, config)
+sim = game.GravitySimulation(planets2, config)
 cam = camera.Camera(np.array([0, -5000, 300]), config["dimensions"])
 screen = pygame.display.set_mode(config["dimensions"])
 background = pygame.Surface(config["dimensions"])
@@ -96,6 +96,9 @@ def get_timewarp_image():
 timewarp_image = get_timewarp_image()
 
 
+pygame.mixer.init()
+music = pygame.mixer.Sound(file="./sound/spheric_lounge_books_of_mantra.ogg")
+music.play()
 
 
 pause = True
@@ -136,6 +139,9 @@ while 1:
                     timewarp_value += 1
                     pause = False
                     timewarp_image = get_timewarp_image()
+
+            if event.key == pygame.K_F12:
+                pygame.display.toggle_fullscreen()
 
         sim.handle_event(event)
 
