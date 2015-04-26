@@ -17,7 +17,9 @@ def generate_planet(base_star, radius, name):
     offset = base_star["pos"]
     angle = random.randrange(0, 360)
     angle = np.math.pi * angle / 180.0
-    pos = np.array(offset) + radius * np.array([np.math.cos(angle), np.math.sin(angle), 0])
+    pos = np.array(offset) + radius * np.array([np.math.cos(angle),
+                                                np.math.sin(angle),
+                                                random.uniform(-np.math.pi / 24, np.math.pi / 24)])
     vel = base_star["vel"] + get_velocity_for_circular_orbit(base_star, pos)
     mass = random.randrange(10000, 300000)
 
