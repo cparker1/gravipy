@@ -7,7 +7,7 @@ import logging
 import time
 import os
 import numpy as np
-import camera
+from camera import Camera
 from utils import clean_filename
 
 logs_directory = '/tmp/gravipy_log' or os.path.join(os.path.dirname(os.path.realpath(__file__)), 'log')
@@ -37,14 +37,14 @@ game.log.addHandler(fh)
 game.body.log.addHandler(ch)
 game.body.log.addHandler(fh)
 
-camera.log.addHandler(ch)
-camera.log.addHandler(fh)
+Camera.log.addHandler(ch)
+Camera.log.addHandler(fh)
 
 config = {
     "dimensions": (1680, 900),
     "gravitational_constant": 0.1,
     "draw_sphere_of_influence": False,
-    "num_bg_stars": 150,
+    "num_bg_stars": 0,
     "enable_movement": False}
 
 black = 0, 0, 0
@@ -62,7 +62,7 @@ planets = planets1 + planets2 + planets3 + planets4 + planets5
 planets2 = game.generate_star_system_config("Sol", (10, 10, 0), 5)
 
 sim = game.GravitySimulation(planets2, config)
-cam = camera.Camera(np.array([0, -5000, 300]), config["dimensions"])
+cam = Camera(np.array([0, -5000, 300]), config["dimensions"])
 screen = pygame.display.set_mode(config["dimensions"])
 background = pygame.Surface(config["dimensions"])
 
@@ -145,13 +145,12 @@ while 1:
             if event.key == pygame.K_F12:
                 pygame.display.toggle_fullscreen()
 
-        sim.handle_event(event)
-
         cam.handle_event(event)
-        if cam.need_upgrade_background() is True:
+        if event.type == Camera.CAMERAEVENT and event.movement == Camera.CAMERATURNED:
             background.fill(black)
             sim.draw_background(background, cam)
 
+        sim.handle_event(event)
 
     screen.fill(black)
     screen.blit(background, (0, 0))

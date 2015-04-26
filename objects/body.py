@@ -23,7 +23,13 @@ class Trail(object):
             self.trail.pop(0)
 
     def get_position_and_radius_trail(self):
-        return self.trail
+        if len(self.trail) < self.max_len_trail:
+            return None
+        else:
+            return self.trail
+
+    def clear_trail(self):
+        self.trail = []
 
 class Planet(object):
     """
@@ -94,6 +100,9 @@ class Planet(object):
         else:
             return True
 
+    def clear_planet_trail(self):
+        self.trail.clear_trail()
+
     def draw(self, surface, camera):
         r, pos = camera.get_apparent_radius_and_draw_pos(self.coord, self.get_radius())
         if self.check_if_visible(r) is False:
@@ -110,9 +119,9 @@ class Planet(object):
                                pos,
                                np.round(r).astype(int),
                                self.border)
-
-            plist, _ = zip(*self.trail.get_position_and_radius_trail())
-            if 1 < len(plist):
+            trail = self.trail.get_position_and_radius_trail()
+            if trail is not None:
+                plist, _ = zip(*self.trail.get_position_and_radius_trail())
                 pygame.draw.lines(surface,
                                   self.color,
                                   False,

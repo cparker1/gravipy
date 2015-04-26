@@ -6,6 +6,7 @@ import logging
 import numpy as np
 import itertools
 from coordinate import Coordinate
+from camera import Camera
 import random
 import pygame
 
@@ -197,6 +198,10 @@ class GravitySimulation(object):
 
             if event.key == pygame.K_b:
                 self.following = False
+
+        if event.type == Camera.CAMERAEVENT and event.movement == Camera.CAMERAMOVED:
+            for p in self.planets:
+                p.clear_planet_trail()
 
     def update_sim(self, camera):
         if self.following is True:
