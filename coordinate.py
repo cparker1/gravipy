@@ -53,10 +53,14 @@ class Coordinate(object):
         self.pos = self.pos + dt * self.vel
         log.debug("Final pos {}".format(self.pos))
 
-    def update_vel(self, acc, dt):
+    def update_vel(self, dt):
         log.debug("Initial vel {}".format(self.vel))
-        self.vel = self.vel + dt * acc
+        self.vel = self.vel + dt * self.acc
         log.debug("Final vel {}".format(self.vel))
+
+    def set_acc(self, acc):
+        log.debug("Changing acceleration to {}".format(acc))
+        self.acc = acc
 
     def get_speed(self):
         return np.sqrt(self.vel.dot(self.vel))

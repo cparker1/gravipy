@@ -112,63 +112,62 @@ class GravitySimulation(object):
         return ret_val
 
     @classmethod
+    def get_distance_and_vectors_for_planets(cls, planets):
+        """
+        Builds a dictionary of radius vectors between planets
+        of format:
+        {
+            p1 : {
+                p2: (distance to p2, vector to p2),
+                p3: (distance to p3, vector to p3)
+            },
+            p2 : {
+                p1: (distance to p1, vector to p1),
+                p3: (distance to p3, vector to p3)
+            }
+            etc..
+        }
+        """
+        return_dict = dict([(p, {}) for p in planets])
+        for a, b in itertools.permutations(planets, 2):
+            dist, vect = a.get_distance_to_other_body(b)
+            return_dict[a][b] = (dist, vect)
+            return_dict[b][a] = (dist, -vect)
+
+        return return_dict
+
+    @classmethod
     def update_positions(cls, dt, planets):
+        for p in planets:
+            p.coord.update_vel(dt)
+
+    @classmethod
+    def update_velocities(cls, dt, planets):
         for p in planets:
             p.coord.update_pos(dt)
 
     @classmethod
-    def update_velocity_and_potential(cls, dt, planets):
+    def update_acceleration(cls, dt, planets):
         dead_planets = set()
-        initial_kinetic = cls.get_total_kinetic_energy(planets)
-        # reset potential energy.  it needs to be recalculated
-        for p in planets:
-            p.potential_energy = 0
+        planet_distances = cls.get_distance_and_vectors_for_planets(planets)
 
-        # apply gravity due to each body.  handle colisions
-        # (collision handling needs dist, so we recycle it here)
-        # TODO: things like distance should be handled in self.planets
-        # TODO: so that it only has to be calculated once.
-        for a, b in itertools.permutations(planets, 2):
-            dist, vect = a.get_distance_to_other_body(b)
-            force = cls.BIG_G * a.mass * b.mass * vect / dist ** 3
+        for a, influencing_planets in planet_distances.items():
+            new_acc_of_a = Coordinate.get_empty_coord()
 
-            mutual_potential = -cls.BIG_G * a.mass * b.mass / dist
-            a.potential_energy += mutual_potential / a.mass
-            b.potential_energy += mutual_potential / b.mass
+            for p, p_info in influencing_planets.items():
+                new_acc_of_a += cls.BIG_G * p.mass * p_info[1] / p_info[0] ** 3
 
-            a.coord.update_vel(force / a.mass, dt)
-            b.coord.update_vel(-force / b.mass, dt)
+                if p_info[0] < body.Planet.get_collision_distance(a, p):
+                    dead_planets.add(body.Planet.handle_collision(a, b))
 
-            if dist < body.Planet.get_collision_distance(a, b):
-                dead_planets.add(body.Planet.handle_collision(a, b))
+            a.coord.set_acc(new_acc_of_a)
 
-        if 0 < len(dead_planets):
-            cls.delete_dead_planets(planets, dead_planets)
-
-        new_potential_energy = cls.get_total_potential_energy(planets)
-
-        return initial_kinetic, new_potential_energy
+        cls.delete_dead_planets(planets, dead_planets)
 
     @classmethod
     def delete_dead_planets(cls, planets, dead_planets):
         for p in dead_planets:
             planets.remove(p)
-
-    @classmethod
-    def calculate_initial_potential(cls, planets):
-        for a, b in itertools.permutations(planets, 2):
-            dist, vect = Coordinate.get_distance_and_radius_vector(a.coord, b.coord)
-            a.potential_energy += -cls.BIG_G * b.mass / dist
-            b.potential_energy += -cls.BIG_G * a.mass / dist
-
-        return cls.get_total_potential_energy(planets)
-
-    @classmethod
-    def get_total_potential_energy(cls, planets):
-        ret_val = 0
-        for p in planets:
-            ret_val += p.get_potential_energy()
-        return ret_val
 
     def handle_event(self, event):
         pass
@@ -176,8 +175,10 @@ class GravitySimulation(object):
     def update_planets(self, dt):
         log.info("UPDATING POSITIONS")
         self.update_positions(dt, self.planets)
-        log.info("UPDATING VELOCITY AND POTENTIAL ENERGY")
-        self.update_velocity_and_potential(dt, self.planets)
+        log.info("UPDATING FORCES/ACCELERATION")
+        self.update_acceleration(dt, self.planets)
+        log.info("UPDATING VELOCITIES")
+        self.update_velocities(dt, self.planets)
 
     def draw_background(self, surface, camera):
         log.info("Drawing Background")
