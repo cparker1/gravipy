@@ -10,6 +10,29 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 
+class Trail(object):
+    def __init__(self, max_len_of_trail, snapshot_interval):
+        self.counter = itertools.count()
+        self.interval = snapshot_interval
+        self.trail = []
+        self.max_len_trail = max_len_of_trail
+
+    def add_position_and_radius_to_trail(self, pos, radius):
+        if self.counter.next() % self.interval == 0:
+            self.trail.append((pos, radius))
+        if self.max_len_trail < len(self.trail):
+            self.trail.pop(0)
+
+    def get_position_and_radius_trail(self):
+        if len(self.trail) < self.max_len_trail:
+            return None
+        else:
+            return self.trail
+
+    def clear_trail(self):
+        self.trail = []
+
+
 class Planet(object):
     """
     Base class for all large objects with
@@ -42,6 +65,7 @@ class Planet(object):
         self.get_radius(update=True)
         self.sphere_of_influence = 0
         self.get_sphere_of_influence(update=True)
+        self.trail = Trail(40, 1)
 
     def get_distance_to_other_body(self, other):
         dist, vect = Coordinate.get_distance_and_radius_vector(self.coord, other.coord)
@@ -78,6 +102,9 @@ class Planet(object):
         else:
             return True
 
+    def clear_planet_trail(self):
+        self.trail.clear_trail()
+
     def draw(self, surface, camera):
         r, pos = camera.get_apparent_radius_and_draw_pos(self.coord, self.get_radius())
         if self.check_if_visible(r) is False:
@@ -85,6 +112,7 @@ class Planet(object):
             return False
 
         elif pos is not None:
+            self.trail.add_position_and_radius_to_trail(pos, r)
             log.debug("Drawing circle: coord={}; radius={}; border={}".format(self.coord.pos,
                                                                               self.get_radius(),
                                                                               self.border))
@@ -93,6 +121,15 @@ class Planet(object):
                                pos,
                                np.round(r).astype(int),
                                self.border)
+            trail = self.trail.get_position_and_radius_trail()
+            if trail is not None:
+                plist, _ = zip(*self.trail.get_position_and_radius_trail())
+                pygame.draw.lines(surface,
+                                  self.color,
+                                  False,
+                                  plist,
+                                  1)
+
             return True
 
     def draw_sphere_of_influence(self, surface, camera):
