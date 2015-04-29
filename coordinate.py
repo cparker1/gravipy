@@ -24,7 +24,7 @@ class Coordinate(object):
         returns an empty coordinate that
         matches the dimensions expected
         """
-        return np.array([0 for _ in range(cls.DIMENSIONS)])
+        return np.array([0.0 for _ in range(cls.DIMENSIONS)])
 
     @classmethod
     def get_random_coordinate(cls, radius_from_zero):

@@ -56,7 +56,7 @@ def get_velocity_for_circular_orbit(parent, pos):
     dist = np.linalg.norm(radius)
 
     vel_norm = np.cross(radius / dist, np.array([0, 0, 1]))
-    speed = 1.3 * math.sqrt(0.5 * parent["mass"] / dist)
+    speed = 1.0 * math.sqrt(0.5 * parent["mass"] / dist)
     return speed * vel_norm
 
 
@@ -71,26 +71,16 @@ def generate_background_star_field(num_stars):
 
 
 class GravitySimulation(object):
-    BIG_G = 0.5
-    DRAW_SOI = False
-
     def __init__(self, planet_configs, sim_config):
         self.sim_config = sim_config
         self.planet_configs = planet_configs
         self.planets = set()
         self.background_stars = set()
-        self.total_energy = 0
         self.create_simulation(self.planet_configs, self.sim_config)
-        self._planets = itertools.cycle(self.planets)
-        GravitySimulation.BIG_G = sim_config["gravitational_constant"]
-        GravitySimulation.DRAW_SOI = sim_config["draw_sphere_of_influence"]
-
-    def does_this_planet_exist(self, planet):
-        return planet in self.planets()
-
-    @property
-    def planet_to_follow(self):
-        return self.planets_to_follow[self.following_idx][1]
+        self.planet_distances = {}
+        self.update_distance_and_vectors_for_planets()
+        self.BIG_G = sim_config["gravitational_constant"]
+        self.DRAW_SOI = sim_config["draw_sphere_of_influence"]
 
     def create_simulation(self, planet_configs, sim_config):
         log.info("Creating simulation.")
@@ -104,15 +94,7 @@ class GravitySimulation(object):
     def reset(self):
         self.create_simulation(self.planet_configs, self.sim_config)
 
-    @classmethod
-    def get_total_kinetic_energy(cls, planets):
-        ret_val = 0
-        for p in planets:
-            ret_val += p.get_kinetic_energy()
-        return ret_val
-
-    @classmethod
-    def get_distance_and_vectors_for_planets(cls, planets):
+    def update_distance_and_vectors_for_planets(self):
         """
         Builds a dictionary of radius vectors between planets
         of format:
@@ -128,57 +110,54 @@ class GravitySimulation(object):
             etc..
         }
         """
-        return_dict = dict([(p, {}) for p in planets])
-        for a, b in itertools.permutations(planets, 2):
-            dist, vect = a.get_distance_to_other_body(b)
-            return_dict[a][b] = (dist, vect)
-            return_dict[b][a] = (dist, -vect)
+        self.planet_distances = dict([(p, {}) for p in self.planets])
+        for a, b in itertools.permutations(self.planets, 2):
+            dist, vect = Coordinate.get_distance_and_radius_vector(a.coord, b.coord)
+            self.planet_distances[a][b] = (dist, vect)
+            self.planet_distances[b][a] = (dist, -vect)
 
-        return return_dict
-
-    @classmethod
-    def update_positions(cls, dt, planets):
-        for p in planets:
+    def update_positions(self, dt):
+        for p in self.planets:
             p.coord.update_vel(dt)
 
-    @classmethod
-    def update_velocities(cls, dt, planets):
-        for p in planets:
+    def update_velocities(self, dt):
+        for p in self.planets:
             p.coord.update_pos(dt)
 
-    @classmethod
-    def update_acceleration(cls, dt, planets):
+    def update_acceleration(self):
         dead_planets = set()
-        planet_distances = cls.get_distance_and_vectors_for_planets(planets)
 
-        for a, influencing_planets in planet_distances.items():
+        for a, influencing_planets in self.planet_distances.items():
             new_acc_of_a = Coordinate.get_empty_coord()
-
             for p, p_info in influencing_planets.items():
-                new_acc_of_a += cls.BIG_G * p.mass * p_info[1] / p_info[0] ** 3
+                acc = self.BIG_G * p.mass * p_info[1] / p_info[0] ** 3
+                new_acc_of_a += acc
+                log.debug("Applying acceleration due to planet {}: {}".format(p.name, acc))
 
                 if p_info[0] < body.Planet.get_collision_distance(a, p):
-                    dead_planets.add(body.Planet.handle_collision(a, b))
+                    dead_planets.add(body.Planet.handle_collision(a, p))
 
+            log.debug("Updating acceleration of Planet {}: new acc = {}".format(a.name, new_acc_of_a))
             a.coord.set_acc(new_acc_of_a)
 
-        cls.delete_dead_planets(planets, dead_planets)
+        self.delete_dead_planets(dead_planets)
 
-    @classmethod
-    def delete_dead_planets(cls, planets, dead_planets):
+    def delete_dead_planets(self, dead_planets):
         for p in dead_planets:
-            planets.remove(p)
+            self.planets.remove(p)
 
     def handle_event(self, event):
         pass
 
     def update_planets(self, dt):
-        log.info("UPDATING POSITIONS")
-        self.update_positions(dt, self.planets)
+        log.info("UPDATING DISTANCES AND RADIUS VECTORS")
+        self.update_distance_and_vectors_for_planets()
         log.info("UPDATING FORCES/ACCELERATION")
-        self.update_acceleration(dt, self.planets)
+        self.update_acceleration()
         log.info("UPDATING VELOCITIES")
-        self.update_velocities(dt, self.planets)
+        self.update_velocities(dt)
+        log.info("UPDATING POSITIONS")
+        self.update_positions(dt)
 
     def draw_background(self, surface, camera):
         log.info("Drawing Background")
@@ -198,7 +177,7 @@ class GravitySimulation(object):
         for p, d in sorted(ordered_list, key=lambda ele: ele[1], reverse=True):
             p.draw(surface, camera)
 
-            if GravitySimulation.DRAW_SOI is True:
+            if self.DRAW_SOI is True:
                 p.draw_sphere_of_influence(surface, camera)
 
     def clear_planet_trails(self):
