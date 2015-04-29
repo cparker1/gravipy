@@ -71,7 +71,7 @@ background.fill(black)
 sim.draw_background(background, cam)
 
 pygame.mixer.init()
-music = pygame.mixer.Sound(file="./sound/spheric_lounge_books_of_mantra.ogg")
+music = pygame.mixer.Sound("./sound/spheric_lounge_books_of_mantra.ogg")
 music.play()
 
 
