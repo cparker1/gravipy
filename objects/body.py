@@ -9,6 +9,7 @@ import itertools
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
+
 class Trail(object):
     def __init__(self, max_len_of_trail, snapshot_interval):
         self.counter = itertools.count()
@@ -30,6 +31,7 @@ class Trail(object):
 
     def clear_trail(self):
         self.trail = []
+
 
 class Planet(object):
     """

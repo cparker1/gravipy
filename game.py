@@ -3,239 +3,114 @@ __author__ = 'charles.andrew.parker@gmail.com'
 
 from objects import body
 import logging
-import numpy as np
 import itertools
 from coordinate import Coordinate
 from camera import Camera
-import random
 import pygame
+import simulation
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 
-def generate_planet(base_star, radius, name):
-    offset = base_star["pos"]
-    angle = random.randrange(0, 360)
-    angle = np.math.pi * angle / 180.0
-    pos = np.array(offset) + radius * np.array([np.math.cos(angle),
-                                                np.math.sin(angle),
-                                                random.uniform(-np.math.pi / 24, np.math.pi / 24)])
-    vel = base_star["vel"] + get_velocity_for_circular_orbit(base_star, pos)
-    mass = random.randrange(10000, 300000)
+class TimeWarp(object):
 
-    def rand_clr():
-        return random.randrange(0, 255)
+    arrow_size = 64, 64
+    timewarp_arrow_color = 96, 64, 96
+    timewarp_image_bgcolor = 255, 196, 255
 
-    color = (rand_clr(), rand_clr(), rand_clr())
+    arrow_image = pygame.Surface(arrow_size)
+    arrow_image.fill(timewarp_image_bgcolor)
+    pygame.draw.polygon(arrow_image, timewarp_arrow_color, [(8, 8), (56, 32), (8, 56)])
 
-    return {"name": name,
-            "pos": pos,
-            "mass": mass,
-            "color": color,
-            "vel": vel}
+    pause_image = pygame.Surface(arrow_size)
+    pause_image.fill(timewarp_image_bgcolor)
+    pygame.draw.rect(pause_image, timewarp_arrow_color, (8, 8, 56, 34))
+
+    @classmethod
+    def build_timewarp_image(cls, timewarp_num):
+        if timewarp_num == 0:
+            return TimeWarp.pause_image
+
+        else:
+            image_size = timewarp_num * cls.arrow_size[0], cls.arrow_size[1]
+            image = pygame.Surface(image_size)
+            for n in range(timewarp_num):
+                image.blit(cls.arrow_image, (n * cls.arrow_size[0], 0))
+
+            return image
+
+    def __init__(self, base_timestep, max_timewarp):
+        self.timewarp_value = 1
+        self.timestep = base_timestep
+        self.max_timewarp = max_timewarp
+        self.images = [TimeWarp.build_timewarp_image(n) for n in range(0, max_timewarp)]
+        self.paused = False
+
+    def get_timewarp_image(self):
+        return self.images[self.timewarp_value]
+
+    def increment_timewarp(self):
+        if self.timewarp_value < self.max_timewarp - 1:
+            self.timewarp_value += 1
+            self.set_pause(pause=False)
+
+    def decrement_timewarp(self):
+        if 1 < self.timewarp_value:
+            self.timewarp_value -= 1
+        else:
+            self.set_pause(pause=True)
+
+    def set_pause(self, pause=True, toggle=False):
+        if toggle is True:
+            self.paused = not self.paused
+        else:
+            self.paused = pause
+
+    def get_timestep(self):
+        return self.timestep ** self.timewarp_value
 
 
-def generate_star_system_config(base_name, offset, num_planets):
-    star = {
-        "name": base_name,
-        "mass": random.randrange(1000000, 8000000),
-        "pos": offset,
-        "color": (255, 255, 190),
-        "vel": (0, 0, 0)}
-
-    planet_list = [star]
-    for r in range(num_planets):
-        new_planet = generate_planet(star,
-                                     1000 * (r + 1),
-                                     "{}-{}".format(star["name"], r+1))
-        planet_list.append(new_planet)
-
-    return planet_list
-
-
-def get_velocity_for_circular_orbit(parent, pos):
-    radius = np.array(pos) - np.array(parent["pos"])
-    dist = np.linalg.norm(radius)
-
-    vel_norm = np.cross(radius / dist, np.array([0, 0, 1]))
-    speed = 1.3 * np.math.sqrt(0.5 * parent["mass"] / dist)
-    return speed * vel_norm
-
-
-def generate_background_star_field(num_stars):
-    star_list = []
-    for _ in range(num_stars):
-        args = {"pos": Coordinate.get_random_coordinate(10000000.0),
-                "vel": Coordinate.get_empty_coord(),
-                "radius": random.randrange(1, 3)}
-        star_list.append(args)
-    return star_list
-
-class GravitySimulation(object):
-    BIG_G = 0.5
-    draw_soi = False
-
+class GravitySimulationSystem(object):
     def __init__(self, planet_configs, sim_config):
-        self.sim_config = sim_config
-        self.planet_configs = planet_configs
-        self.planets = set()
-        self.background_stars = set()
-        self.total_energy = 0
-        self.create_simulation(self.planet_configs, self.sim_config)
-        self._planets = itertools.cycle(self.planets)
-        GravitySimulation.big_g = sim_config["gravitational_constant"]
-        GravitySimulation.draw_soi = sim_config["draw_sphere_of_influence"]
-        self.planets_to_follow = [(a, b) for a, b in enumerate(self.planets)]
-        self.following = False
-        self.following_idx = 0
-        self.tracking = False
-
-    # TODO: This feels dumb as shit...
-    def get_next_valid_planet_index(self, index):
-        index += 1
-        length = len(self.planets)
-        if length <= index:
-            index = 0
-
-        return index
-
-    def get_next_planet_to_follow(self):
-        self.following_idx = self.get_next_valid_planet_index(self.following_idx)
-
-    @property
-    def planet_to_follow(self):
-        return self.planets_to_follow[self.following_idx][1]
-
-    def create_simulation(self, planet_configs, sim_config):
-        log.info("Creating simulation.")
-        self.planets = set()
-        for p in planet_configs:
-            self.planets.add(body.Planet(**p))
-
-        for s in generate_background_star_field(sim_config["num_bg_stars"]):
-            self.background_stars.add(body.BackgroundStar(**s))
-
-    def reset(self):
-        self.create_simulation(self.planet_configs, self.sim_config)
-
-    @classmethod
-    def get_total_kinetic_energy(cls, planets):
-        ret_val = 0
-        for p in planets:
-            ret_val += p.get_kinetic_energy()
-        return ret_val
-
-    @classmethod
-    def update_positions(cls, dt, planets):
-        for p in planets:
-            p.coord.update_pos(dt)
-
-    @classmethod
-    def update_velocity_and_potential(cls, dt, planets):
-        dead_planets = set()
-        initial_kinetic = cls.get_total_kinetic_energy(planets)
-        # reset potential energy.  it needs to be recalculated
-        for p in planets:
-            p.potential_energy = 0
-
-        # apply gravity due to each body.  handle colisions
-        # (collision handling needs dist, so we recycle it here)
-        # TODO: things like distance should be handled in self.planets
-        # TODO: so that it only has to be calculated once.
-        for a, b in itertools.permutations(planets, 2):
-            dist, vect = a.get_distance_to_other_body(b)
-            force = cls.BIG_G * a.mass * b.mass * vect / dist ** 3
-
-            mutual_potential = -cls.BIG_G * a.mass * b.mass / dist
-            a.potential_energy += mutual_potential / a.mass
-            b.potential_energy += mutual_potential / b.mass
-
-            a.coord.update_vel(force / a.mass, dt)
-            b.coord.update_vel(-force / b.mass, dt)
-
-            if dist < body.Planet.get_collision_distance(a, b):
-                dead_planets.add(body.Planet.handle_collision(a, b))
-
-        if 0 < len(dead_planets):
-            cls.delete_dead_planets(planets, dead_planets)
-
-        new_potential_energy = cls.get_total_potential_energy(planets)
-
-        return initial_kinetic, new_potential_energy
-
-    @classmethod
-    def delete_dead_planets(cls, planets, dead_planets):
-        for p in dead_planets:
-            planets.remove(p)
-
-    @classmethod
-    def calculate_initial_potential(cls, planets):
-        for a, b in itertools.permutations(planets, 2):
-            dist, vect = Coordinate.get_distance_and_radius_vector(a.coord, b.coord)
-            a.potential_energy += -cls.BIG_G * b.mass / dist
-            b.potential_energy += -cls.BIG_G * a.mass / dist
-
-        return cls.get_total_potential_energy(planets)
-
-    @classmethod
-    def get_total_potential_energy(cls, planets):
-        ret_val = 0
-        for p in planets:
-            ret_val += p.get_potential_energy()
-        return ret_val
+        self.sim = simulation.GravitySimulation(planet_configs, sim_config)
+        self.time_handler = TimeWarp(1.3, 8)
 
     def handle_event(self, event):
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_n:
-                self.get_next_planet_to_follow()
-                self.following = True
-                log.info("Now following {}".format(self.planet_to_follow.name))
+            if event.key == pygame.K_SPACE:
+                self.sim.reset()
 
-            if event.key == pygame.K_m:
-                if self.following is True:
-                    self.tracking = True
+            if event.key == pygame.K_p:
+                self.time_handler.set_pause(toggle=True)
 
-            if event.key == pygame.K_b:
-                self.following = False
+            if event.key == pygame.K_COMMA:
+                self.time_handler.decrement_timewarp()
+
+            if event.key == pygame.K_PERIOD:
+                self.time_handler.increment_timewarp()
 
         if event.type == Camera.CAMERAEVENT and event.movement == Camera.CAMERAMOVED:
-            for p in self.planets:
-                p.clear_planet_trail()
-
-    def update_sim(self, camera):
-        if self.following is True:
-            camera.set_origin(self.planet_to_follow.coord)
-
-        if self.tracking is True:
-            camera.point_towards_target(self.planet_to_follow.coord)
-            self.tracking = False
-
-
-    def update_planets(self, dt):
-        log.info("UPDATING POSITIONS")
-        self.update_positions(dt, self.planets)
-        log.info("UPDATING VELOCITY AND POTENTIAL ENERGY")
-        self.update_velocity_and_potential(dt, self.planets)
+            self.sim.clear_planet_trails()
 
     def draw_background(self, surface, camera):
         log.info("Drawing Background")
-        for p in self.background_stars:
-            log.debug("P {}".format(p.coord.pos))
-            p.draw(surface, camera)
+        self.sim.draw_background(surface, camera)
 
     def draw_planets(self, surface, camera):
         log.info("Drawing planets")
+        self.sim.draw_planets(surface, camera)
 
-        # build ordered list
-        ordered_list = []
-        for p in self.planets:
-            dist, _ = Coordinate.get_distance_and_radius_vector(camera.coord, p.coord)
-            ordered_list.append((p, dist))
+    def draw_timewarp_image(self, surface):
+        log.info("Drawing timewarp image")
+        surface.blit(self.time_handler.get_timewarp_image(), (100, 800))
 
-        for p, d in sorted(ordered_list, key=lambda ele: ele[1], reverse=True):
-            p.draw(surface, camera)
+    def step(self):
+        if self.time_handler.paused is False:
+            self.sim.update_planets(self.time_handler.get_timestep())
 
-            if GravitySimulation.draw_soi is True:
-                p.draw_sphere_of_influence(surface, camera)
+    def draw(self, surface, camera):
+        self.draw_background(surface, camera)
+        self.draw_planets(surface, camera)
+        self.draw_timewarp_image(surface)
 
