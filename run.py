@@ -45,24 +45,25 @@ Camera.log.addHandler(fh)
 config = {
     "dimensions": (1680, 900),
     "gravitational_constant": 0.5,
-    "draw_sphere_of_influence": True,
-    "num_bg_stars": 0,
+    "draw_sphere_of_influence": False,
+    "num_bg_stars": 250,
     "enable_movement": False}
 
 black = 0, 0, 0
 
 pygame.init()
 
-planets1 = simulation.generate_star_system_config("Sol", (1000, 1000, -4000), 1)
-planets2 = simulation.generate_star_system_config("Sol", (-15000, 1000, 0), 2)
-planets3 = simulation.generate_star_system_config("Sol", (8000, -10000, 4000), 1)
-planets4 = simulation.generate_star_system_config("Sol", (-8000, 1000, 8000), 1)
-planets5 = simulation.generate_star_system_config("Sol", (4000, -4000, 4000), 1)
-planets = planets1 + planets2 + planets3 + planets4 + planets5
+planets1 = simulation.generate_star_system_config("Sol", (0, 0, 0), 5)
+# planets2 = simulation.generate_star_system_config("Sol", (-15000, 1000, 0), 2)
+# planets3 = simulation.generate_star_system_config("Sol", (8000, -10000, 4000), 1)
+# planets4 = simulation.generate_star_system_config("Sol", (-8000, 1000, 8000), 3)
+# planets5 = simulation.generate_star_system_config("Sol", (4000, -4000, 4000), 1)
+# planets = planets1 + planets2 + planets3 + planets4 + planets5
+planets = planets1
 
 planets2 = simulation.generate_star_system_config("Sol", (10, 10, 0), 5)
 
-sim = game.GravitySimulationSystem(planets2, config)
+sim = game.GravitySimulationSystem(planets, config)
 cam = Camera(np.array([0, -5000, 300]), config["dimensions"])
 screen = pygame.display.set_mode(config["dimensions"])
 background = pygame.Surface(config["dimensions"])
@@ -79,8 +80,11 @@ clock = pygame.time.Clock()
 clock.tick()
 clock.get_time()
 
+pygame.key.set_repeat(10, 10)
 
 while 1:
+    screen.fill(black)
+
     for event in pygame.event.get():
         log.debug("Handling pygame event {}".format(event.type))
         if event.type == pygame.QUIT:
@@ -88,12 +92,11 @@ while 1:
 
         cam.handle_event(event)
         if event.type == Camera.CAMERAEVENT and event.movement == Camera.CAMERATURNED:
-            background.fill(black)
             sim.draw_background(background, cam)
 
         sim.handle_event(event)
 
-    screen.fill(black)
+
     screen.blit(background, (0, 0))
 
     sim.step()

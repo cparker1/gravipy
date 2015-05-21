@@ -161,6 +161,7 @@ class GravitySimulation(object):
 
     def draw_background(self, surface, camera):
         log.info("Drawing Background")
+        surface.fill((0, 0, 0))
         for p in self.background_stars:
             log.debug("P {}".format(p.coord.pos))
             p.draw(surface, camera)
