@@ -82,11 +82,23 @@ class GravitySimulation(object):
         self.BIG_G = sim_config["gravitational_constant"]
         self.DRAW_SOI = sim_config["draw_sphere_of_influence"]
 
+    def set_planets(self, planets):
+        """
+        Provides an interface for saved data.  If you don't want
+        to run the sumulation, just set the planets to a saved
+        set
+        """
+        self.planets = planets
+
+    def get_planet_simulation_state(self):
+        return [p for p in self.planets]
+
     def create_simulation(self, planet_configs, sim_config):
         log.info("Creating simulation.")
         self.planets = set()
-        for p in planet_configs:
-            self.planets.add(body.Planet(**p))
+        if planet_configs is not None:
+            for p in planet_configs:
+                self.planets.add(body.Planet(**p))
 
         for s in generate_background_star_field(sim_config["num_bg_stars"]):
             self.background_stars.add(body.BackgroundStar(**s))
