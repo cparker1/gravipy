@@ -108,25 +108,19 @@ class GravitySimulation(object):
 
     def update_distance_and_vectors_for_planets(self):
         """
-        Builds a dictionary of radius vectors between planets
+        builds a dict of radius vectors between planets
         of format:
         {
-            p1 : {
-                p2: (distance to p2, vector to p2),
-                p3: (distance to p3, vector to p3)
-            },
-            p2 : {
-                p1: (distance to p1, vector to p1),
-                p3: (distance to p3, vector to p3)
-            }
-            etc..
+            (p1, p2): distance from p1 to p2,
+            (p1, p3): distance from p1 to p3,
+            ...
+            (p3, p4): distance from p3 to p4, etc.
         }
         """
-        self.planet_distances = dict([(p, {}) for p in self.planets])
-        for a, b in itertools.permutations(self.planets, 2):
+        self.planet_distances = {}
+        for a, b in itertools.combinations(self.planets, 2):
             dist, vect = Coordinate.get_distance_and_radius_vector(a.coord, b.coord)
-            self.planet_distances[a][b] = (dist, vect)
-            self.planet_distances[b][a] = (dist, -vect)
+            self.planet_distances[(a, b)] = (dist, vect)
 
     def update_positions(self, dt):
         for p in self.planets:
@@ -138,19 +132,20 @@ class GravitySimulation(object):
 
     def update_acceleration(self):
         dead_planets = set()
+        for p in self.planets:
+            p.coord.zero_acc()
 
-        for a, influencing_planets in self.planet_distances.items():
-            new_acc_of_a = Coordinate.get_empty_coord()
-            for p, p_info in influencing_planets.items():
-                acc = self.BIG_G * p.mass * p_info[1] / p_info[0] ** 3
-                new_acc_of_a += acc
-                log.debug("Applying acceleration due to planet {}: {}".format(p.name, acc))
+        for planets, distances in self.planet_distances.items():
+                a, b = planets
+                dist, vect = distances
 
-                if p_info[0] < body.Planet.get_collision_distance(a, p):
-                    dead_planets.add(body.Planet.handle_collision(a, p))
+                acc = self.BIG_G * a.mass * b.mass * vect / dist ** 3
 
-            log.debug("Updating acceleration of Planet {}: new acc = {}".format(a.name, new_acc_of_a))
-            a.coord.set_acc(new_acc_of_a)
+                a.coord.update_acc(acc/a.mass)
+                b.coord.update_acc(-acc/b.mass)
+
+                if dist < body.Planet.get_collision_distance(a, b):
+                    dead_planets.add(body.Planet.handle_collision(a, b))
 
         self.delete_dead_planets(dead_planets)
 

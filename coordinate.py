@@ -62,5 +62,13 @@ class Coordinate(object):
         log.debug("Changing acceleration to {}".format(acc))
         self.acc = acc
 
+    def update_acc(self, acc):
+        self.acc += acc
+        log.debug("Updating acceleration to {}".format(self.acc))
+
+    def zero_acc(self):
+        log.debug("Setting acceleration to <0.0>")
+        self.acc = Coordinate.get_empty_coord()
+
     def get_speed(self):
         return np.sqrt(self.vel.dot(self.vel))
