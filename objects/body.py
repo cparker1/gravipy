@@ -18,7 +18,7 @@ class Trail(object):
         self.max_len_trail = max_len_of_trail
 
     def add_position_and_radius_to_trail(self, pos, radius):
-        if self.counter.next() % self.interval == 0:
+        if next(self.counter) % self.interval == 0:
             self.trail.append((pos, radius))
         if self.max_len_trail < len(self.trail):
             self.trail.pop(0)

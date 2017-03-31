@@ -16,7 +16,7 @@ logs_directory = '/tmp/gravipy_log' or os.path.join(os.path.dirname(os.path.real
 if os.path.exists(logs_directory) and not os.path.isdir(logs_directory):
     raise IOError("Log directory choice is not a real directory!")
 current_log = os.path.join(logs_directory, clean_filename(time.asctime()))
-os.makedirs(current_log, mode=0744)
+os.makedirs(current_log, mode=0o744)
 
 
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')

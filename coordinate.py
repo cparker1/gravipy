@@ -28,8 +28,8 @@ class Coordinate(object):
 
     @classmethod
     def get_random_coordinate(cls, radius_from_zero):
-        pitch = random.sample(np.arange(1 * math.pi / 8, 7 * math.pi / 8, math.pi/180), 1)[0]
-        yaw = random.sample(np.arange(0, 2 * math.pi, math.pi/180), 1)[0]
+        pitch = random.sample(list(np.arange(1*math.pi/8, 7*math.pi/8, math.pi/180)), 1)[0]
+        yaw = random.sample(list(np.arange(0, 2 * math.pi, math.pi/180)), 1)[0]
         x = radius_from_zero * math.sin(pitch) * math.cos(yaw)
         y = radius_from_zero * math.sin(pitch) * math.sin(yaw)
         z = radius_from_zero * math.cos(pitch)
