@@ -8,6 +8,7 @@ from coordinate import Coordinate
 from camera import Camera
 import pygame
 import simulation
+import time
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -75,6 +76,8 @@ class GravitySimulationSystem(object):
     def __init__(self, planet_configs, sim_config):
         self.sim = simulation.GravitySimulation(planet_configs, sim_config)
         self.time_handler = TimeWarp(1.3, 8)
+        self.saved_background = pygame.Surface(sim_config["dimensions"])
+        self.update_background = True
 
     def handle_event(self, event):
         if event.type == pygame.KEYDOWN:
@@ -93,9 +96,17 @@ class GravitySimulationSystem(object):
         if event.type == Camera.CAMERAEVENT and event.movement == Camera.CAMERAMOVED:
             self.sim.clear_planet_trails()
 
+        if event.type == Camera.CAMERAEVENT and event.movement == Camera.CAMERATURNED:
+            self.update_background = True
+
     def draw_background(self, surface, camera):
         log.info("Drawing Background")
-        self.sim.draw_background(surface, camera)
+        if self.update_background:
+            self.sim.draw_background(surface, camera)
+            self.saved_background.blit(surface, (0, 0))
+            self.update_background = False
+        else:
+            surface.blit(self.saved_background, (0, 0))
 
     def draw_planets(self, surface, camera):
         log.info("Drawing planets")
